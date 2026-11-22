@@ -18,9 +18,9 @@ Sources, in build order:
 | Evolving-Hockey + PuckPedia | `sports_ingest/advanced_hockey` | **licensed**, manually exported files only |
 
 Data flows **sources → adapters → models → caches → consumers**. See
-`docs/ARCHITECTURE.md` once it exists (issue M0-02).
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the diagram, module map, and how to add a source.
 
-Design rules already decided (ADRs are written up in M0-02):
+Design rules already decided (each has an ADR in [`docs/adr/`](docs/adr/README.md)):
 
 - Ruby library, **no database** in the library. Persistence is caches on disk as JSON.
 - Two cache tiers: a **raw** HTTP cache (TTL per source, served stale when the network errors)
