@@ -48,9 +48,9 @@ Claude Code does a lot of the implementation, under the same review rules as any
 - **Instructions.** Claude reads [`CLAUDE.md`](CLAUDE.md) (project rules) and
   [`docs/RESUME.md`](docs/RESUME.md) (current status and next issues) at the start of each session.
   Keep both current: they're how a fresh session picks the work back up.
-- **Separate identity.** Claude commits, pushes and opens PRs as the machine account
-  `BryceAIRich`, not as the maintainer, so the maintainer can review and approve its PRs.
-  The exact `gh` and `git` setup is in [`CLAUDE.md`](CLAUDE.md).
+- **Separate identity.** Claude can commit, push and open PRs as your own machine account, so you
+  can review and approve its PRs. Set it per clone with `git config --local claude.botUser`; the
+  full setup is in [`CLAUDE.md`](CLAUDE.md). Without one, Claude uses your own account.
 - **Workflow.** For an issue, Claude creates the branch, moves the issue to In Progress, makes the
   change, opens a PR from the template, and moves the issue to Awaiting Human Review.
   It doesn't merge its own PRs; the maintainer reviews and merges. `/work-issue <N>` runs this

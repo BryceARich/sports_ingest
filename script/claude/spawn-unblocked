@@ -45,20 +45,18 @@ to_start.each do |r|
   Dir.mkdir(logs) unless Dir.exist?(logs)
   run("git", "-C", main, "worktree", "add", "--quiet", "-b", branch, path, "origin/main")
 
+  who = bot ? "the #{bot} account" : "your own GitHub account"
   prompt = <<~PROMPT
     You are working on GitHub issue ##{n} (#{issue["title"]}) in a dedicated git worktree.
     Branch `#{branch}` is already checked out from the latest origin/main. GH_TOKEN and the git
-    author are set to the #{BOT} bot account, so use plain `gh` and `git` without the token prefix.
-    Read .claude/commands/work-issue.md and follow it for issue ##{n} ($ARGUMENTS in that file
-    means #{n}); skip branch creation. This is a headless run: if you need a decision from the
-    maintainer, comment on the issue with the question, leave it In Progress, and stop.
-    Never merge, never push to main.
+    author are set to #{who}, so use plain `gh` and `git` without a token prefix, and push to the
+    `#{push_remote}` remote. Read .claude/commands/work-issue.md and follow it for issue ##{n}
+    ($ARGUMENTS in that file means #{n}); skip branch creation. This is a headless run: if you
+    need a decision from the maintainer, comment on the issue with the question, leave it
+    In Progress, and stop. Never merge, never push to main.
   PROMPT
 
-  env = bot_env.merge(
-    "GIT_AUTHOR_NAME" => BOT, "GIT_COMMITTER_NAME" => BOT,
-    "GIT_AUTHOR_EMAIL" => BOT_EMAIL, "GIT_COMMITTER_EMAIL" => BOT_EMAIL
-  )
+  env = bot_env.merge(bot_git_env)
   pid = Process.spawn(env, "claude", "-p", prompt,
     "--permission-mode", "acceptEdits", "--allowedTools", ALLOWED_TOOLS,
     chdir: path, in: File::NULL, out: log, err: [:child, :out], pgroup: true)

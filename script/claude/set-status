@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Sets an issue's Status on the "Sports Ingestion" project board, as the bot.
+# Sets an issue's Status on the "Sports Ingestion" project board, as the configured bot (see script/claude/identity).
 #
 #   script/claude/set-status 4 "In Progress"
 #   script/claude/set-status 4 "Awaiting Human Review"
@@ -10,17 +10,17 @@ include ClaudeScripts
 
 n = Integer(ARGV[0] || abort("usage: set-status <issue number> <status>"))
 wanted = ARGV[1] || abort("usage: set-status <issue number> <status>")
-env = ENV["GH_TOKEN"] ? {} : bot_env
+env = bot_env
 
-project_id = run("gh", "project", "view", PROJECT, "--owner", OWNER, "--format", "json", "--jq", ".id", env: env).strip
-field = gh_lines("project", "field-list", PROJECT, "--owner", OWNER, "--format", "json",
+project_id = run("gh", "project", "view", PROJECT, "--owner", owner, "--format", "json", "--jq", ".id", env: env).strip
+field = gh_lines("project", "field-list", PROJECT, "--owner", owner, "--format", "json",
   "--jq", '.fields[] | select(.name == "Status")', env: env).first || abort("no Status field on the board")
 option = field["options"].find { |o| o["name"].casecmp?(wanted) } ||
   abort("unknown status #{wanted.inspect}; options: #{field["options"].map { |o| o["name"] }.join(", ")}")
 
 item_id = board_items.dig(n, "id")
-item_id ||= run("gh", "project", "item-add", PROJECT, "--owner", OWNER,
-  "--url", "https://github.com/#{REPO}/issues/#{n}", "--format", "json", "--jq", ".id", env: env).strip
+item_id ||= run("gh", "project", "item-add", PROJECT, "--owner", owner,
+  "--url", "https://github.com/#{repo}/issues/#{n}", "--format", "json", "--jq", ".id", env: env).strip
 
 run("gh", "project", "item-edit", "--id", item_id, "--project-id", project_id,
   "--field-id", field["id"], "--single-select-option-id", option["id"], env: env)

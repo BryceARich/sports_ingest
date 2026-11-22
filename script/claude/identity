@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Prints the GitHub account, commit email and push remote Claude should use in this clone.
+# They come from local git config (.git/config, never committed), so each contributor sets
+# their own:
+#
+#   git config --local claude.botUser   <ai-account-login>   # optional; unset = your own account
+#   git config --local claude.botEmail  <email>              # optional; default is its noreply address
+#   git config --local claude.botRemote <remote>             # optional; default "bot", or "origin" with no bot
+#
+#   script/claude/identity
+require_relative "lib/issues"
+include ClaudeScripts
+
+puts "repo:   #{repo}"
+if bot
+  puts "bot:    #{bot}"
+  puts "email:  #{bot_email}"
+  puts "remote: #{push_remote}"
+  puts "gh:     prefix gh calls with GH_TOKEN=$(gh auth token --user #{bot}) unless GH_TOKEN is set"
+  puts "git:    git -c user.name=#{bot} -c user.email=#{bot_email} commit ..."
+else
+  puts "bot:    (none; using your active gh account and git identity)"
+  puts "remote: #{push_remote}"
+end

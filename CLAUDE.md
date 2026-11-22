@@ -66,30 +66,31 @@ bundle exec rake fixtures:record      # re-record fixtures against live sources 
 
 ## Claude's GitHub identity
 
-Claude works as the machine account **BryceAIRich**, not as the maintainer, so the maintainer can
-review and approve its PRs. Both accounts are logged in to `gh`; the maintainer stays the active one.
+Claude can work as a separate machine account, so the person running it can review and approve its
+PRs like anyone else's. Which account is set **per clone, in local git config** (`.git/config`,
+never committed), so each contributor uses their own and no account names live in the repo.
+`script/claude/identity` prints what this clone uses; follow it.
 
-- **`gh` calls** (PRs, issues, comments): prefix with the bot's token, never `gh auth switch`:
-  `GH_TOKEN=$(gh auth token --user BryceAIRich) gh pr create ...`
-- **Commits:** author them as the bot:
-  `git -c user.name=BryceAIRich -c user.email=360013208+BryceAIRich@users.noreply.github.com commit ...`
-- **Pushes:** push to the `bot` remote, never `origin`: `git push -u bot <branch>`.
-  The `bot` remote and its credential helper live in this clone's local git config (not committed);
-  on a fresh clone, set them up with:
+- **No bot configured:** Claude uses your active `gh` account and your git identity.
+- **With a bot:** log the bot in to `gh` next to your own account (yours stays active), then:
 
   ```bash
-  git remote add bot https://BryceAIRich@github.com/BryceARich/sports_ingest.git
-  git config --local --add 'credential.https://BryceAIRich@github.com.helper' ''
-  git config --local --add 'credential.https://BryceAIRich@github.com.helper' \
-    '!f() { test "$1" = get && echo username=BryceAIRich && echo "password=$(gh auth token --user BryceAIRich)"; }; f'
+  git config --local claude.botUser <bot-login>
+  git remote add bot https://<bot-login>@github.com/<owner>/<repo>.git
+  git config --local --add 'credential.https://<bot-login>@github.com.helper' ''
+  git config --local --add 'credential.https://<bot-login>@github.com.helper' \
+    '!f() { test "$1" = get && echo username=<bot-login> && echo "password=$(gh auth token --user <bot-login>)"; }; f'
   ```
 
-- **Project board:** the bot is a project collaborator and its token has the `project` scope, so
-  board status changes use the bot's token too (`GH_TOKEN=... gh project item-edit ...`).
-- **Token:** the bot is logged in with a classic token (`repo`, `project`, `read:org`) that
-  expires on 2027-02-20. When `gh` calls as the bot start failing with auth errors, the maintainer
-  generates a new one and runs `pbpaste | gh auth login --hostname github.com --with-token`,
-  then `gh auth switch --user BryceARich`.
+  Optional: `claude.botEmail` (default: the bot's GitHub noreply address) and `claude.botRemote`
+  (default: `bot`).
+- **`gh` calls** as the bot: prefix with its token, never `gh auth switch`:
+  `GH_TOKEN=$(gh auth token --user <bot-login>) gh pr create ...`
+- **Commits** as the bot: `git -c user.name=<bot-login> -c user.email=<bot-email> commit ...`
+- **Pushes:** to the bot's remote, never `origin`: `git push -u bot <branch>`.
+- **Access:** the bot needs write access to the repo and to the project board, and a token with
+  `repo`, `project` and `read:org`. Keep the token to those scopes. When it expires, renew it with
+  `pbpaste | gh auth login --hostname github.com --with-token`, then `gh auth switch` back to yourself.
 
 ## The licensed-data rule
 
@@ -120,9 +121,9 @@ Two slash commands in `.claude/commands/` script this:
   whose blockers have all closed and starts a fresh headless session for each one in its own
   worktree (`../sports_ingest-worktrees/<branch>`), working as the bot. It starts at most 3 by default.
 
-The repo is public, so both only trust the maintainer: the scripts skip issues anyone else opened,
-and `/work-issue` reads only comments from the maintainer and the bot. Keep it that way; a session
-holds the bot's token and can run code on the maintainer's machine.
+The repo is public, so both only trust people with a role on the repo (owner, org member or
+collaborator): the scripts skip issues anyone else opened, and `/work-issue` reads only those
+people's comments. Keep it that way; a session holds a GitHub token and can run code on your machine.
 
 Helpers in `script/claude/` (stdlib Ruby + `gh`): `ready-issues [--all | --check N]` and
 `set-status N "<Status>"`. Use them instead of hand-written `gh` queries, which cost more tokens.
