@@ -8,6 +8,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `.github/CODEOWNERS` naming the maintainer as reviewer for every path, used by the
+  "Protect main" ruleset that requires a code-owner approval on PRs to `main`.
 - `docs/ARCHITECTURE.md`: data-flow diagram (Mermaid), module map and how to add a new source (M0-02).
 - `docs/adr/` with an ADR template and the first six ADRs: Ruby library, no database in the library,
   two cache tiers, canonical player IDs, licensed data never committed, and the `seasons:` / `last: N`
