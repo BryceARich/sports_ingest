@@ -8,6 +8,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Issue templates (Task, Bug, Consumer request) with Context, Acceptance criteria, Blocked by and
+  the Definition of Done; a PR template with the DoD checklist; and `CONTRIBUTING.md` covering
+  branching, commit style and how Claude Code is used here (M0-03).
 - `.github/CODEOWNERS` naming the maintainer as reviewer for every path, used by the
   "Protect main" ruleset that requires a code-owner approval on PRs to `main`.
 - `CLAUDE.md` section on Claude's GitHub identity: commits, pushes and PRs go through the
