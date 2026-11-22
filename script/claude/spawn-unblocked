@@ -1,0 +1,80 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Starts a headless Claude Code session, in its own git worktree, for each ready issue.
+# Run it from your terminal after merging a PR. It uses no Claude tokens until the sessions start.
+#
+#   script/claude/spawn-unblocked              # start up to 3
+#   script/claude/spawn-unblocked 5            # start up to 5
+#   script/claude/spawn-unblocked --dry-run    # show what would start
+require_relative "lib/issues"
+include ClaudeScripts
+
+ALLOWED_TOOLS = %w[
+  Read Edit Write Glob Grep
+  Bash(git:*) Bash(gh:*) Bash(bundle:*) Bash(mise:*) Bash(ruby:*)
+  Bash(script/claude/ready-issues:*) Bash(script/claude/set-status:*)
+].join(",")
+
+max = (ARGV.find { |a| a =~ /\A\d+\z/ } || 3).to_i
+dry_run = ARGV.include?("--dry-run") || ARGV.include?("dry-run")
+
+abort "error: the `claude` CLI isn't on your PATH" unless dry_run || system("command -v claude >/dev/null 2>&1")
+
+main = main_clone
+run("git", "-C", main, "fetch", "--quiet", "origin", "main", "--prune")
+ready, skipped = classify
+to_start = ready.first(max)
+
+skipped.each { |s| puts "skip   ##{s[:issue]["number"]}  #{label(s[:issue])}  #{s[:reason]}" } if ARGV.include?("--all")
+puts "#{ready.size} ready, #{skipped.size} skipped; starting #{to_start.size}#{" (dry run)" if dry_run}"
+
+root = worktree_root
+logs = File.join(root, "logs")
+
+to_start.each do |r|
+  issue = r[:issue]
+  n = issue["number"]
+  branch = r[:branch]
+  path = File.join(root, branch)
+  log = File.join(logs, "#{branch}.log")
+  puts "start  ##{n}  #{label(issue)}  #{path}"
+  next if dry_run
+
+  Dir.mkdir(root) unless Dir.exist?(root)
+  Dir.mkdir(logs) unless Dir.exist?(logs)
+  run("git", "-C", main, "worktree", "add", "--quiet", "-b", branch, path, "origin/main")
+
+  prompt = <<~PROMPT
+    You are working on GitHub issue ##{n} (#{issue["title"]}) in a dedicated git worktree.
+    Branch `#{branch}` is already checked out from the latest origin/main. GH_TOKEN and the git
+    author are set to the #{BOT} bot account, so use plain `gh` and `git` without the token prefix.
+    Read .claude/commands/work-issue.md and follow it for issue ##{n} ($ARGUMENTS in that file
+    means #{n}); skip branch creation. This is a headless run: if you need a decision from the
+    maintainer, comment on the issue with the question, leave it In Progress, and stop.
+    Never merge, never push to main.
+  PROMPT
+
+  env = bot_env.merge(
+    "GIT_AUTHOR_NAME" => BOT, "GIT_COMMITTER_NAME" => BOT,
+    "GIT_AUTHOR_EMAIL" => BOT_EMAIL, "GIT_COMMITTER_EMAIL" => BOT_EMAIL
+  )
+  pid = Process.spawn(env, "claude", "-p", prompt,
+    "--permission-mode", "acceptEdits", "--allowedTools", ALLOWED_TOOLS,
+    chdir: path, in: File::NULL, out: log, err: [:child, :out], pgroup: true)
+  Process.detach(pid)
+  puts "       log: #{log}"
+end
+
+unless dry_run || to_start.empty?
+  puts "\nCheck one: tail -f <log>.  When it finishes: cd <worktree> && claude --continue"
+end
+
+done = Dir.glob(File.join(root, "m*")).select { |d| File.directory?(d) }.select do |d|
+  pre = File.basename(d)[/\Am(\d+)-(\d+)-/]
+  pre && skipped.none? { |s| s[:branch].start_with?(pre) } && ready.none? { |x| x[:branch].start_with?(pre) }
+end
+unless done.empty?
+  puts "\nWorktrees whose issue is closed (remove when you're done with them):"
+  done.each { |d| puts "  git -C #{main} worktree remove #{d}" }
+end

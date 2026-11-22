@@ -110,3 +110,15 @@ Evolving-Hockey and PuckPedia data is licensed to the user personally. **It neve
 3. When you open the PR, set the issue's Status on the "Sports Ingestion" project board to
    **Awaiting Human Review** (`gh project item-edit`). Merging the PR moves it to Done.
 4. At the end of each milestone, update `docs/RESUME.md` (status, next 3 issues, gotchas).
+
+Two slash commands in `.claude/commands/` script this:
+
+- **`/work-issue <N>`** runs steps 1–3 for one issue, then leaves handoff notes on the issues it
+  unblocks. Use one issue per session.
+- **`/spawn-unblocked [max] [--dry-run]`** is a thin wrapper around `script/claude/spawn-unblocked`.
+  Running the script straight from a terminal after merging a PR costs no tokens. It finds issues
+  whose blockers have all closed and starts a fresh headless session for each one in its own
+  worktree (`../sports_ingest-worktrees/<branch>`), working as the bot. It starts at most 3 by default.
+
+Helpers in `script/claude/` (stdlib Ruby + `gh`): `ready-issues [--all | --check N]` and
+`set-status N "<Status>"`. Use them instead of hand-written `gh` queries, which cost more tokens.

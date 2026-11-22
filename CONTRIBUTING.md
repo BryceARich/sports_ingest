@@ -53,7 +53,9 @@ Claude Code does a lot of the implementation, under the same review rules as any
   The exact `gh` and `git` setup is in [`CLAUDE.md`](CLAUDE.md).
 - **Workflow.** For an issue, Claude creates the branch, moves the issue to In Progress, makes the
   change, opens a PR from the template, and moves the issue to Awaiting Human Review.
-  It doesn't merge its own PRs; the maintainer reviews and merges.
+  It doesn't merge its own PRs; the maintainer reviews and merges. `/work-issue <N>` runs this
+  for one issue. After a merge, `/spawn-unblocked` starts a separate session for each issue
+  that the merge unblocked.
 - **Attribution.** Commits Claude writes end with a `Co-Authored-By:` trailer, and its PR
   descriptions say they were generated with Claude Code.
 - **Limits.** Claude follows the licensed-data rule like everyone else, and stops and flags it if
