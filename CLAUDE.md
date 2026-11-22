@@ -84,8 +84,12 @@ review and approve its PRs. Both accounts are logged in to `gh`; the maintainer 
     '!f() { test "$1" = get && echo username=BryceAIRich && echo "password=$(gh auth token --user BryceAIRich)"; }; f'
   ```
 
-- **Project board:** the bot's token has no `project` scope, so board status changes use the
-  maintainer's token (plain `gh project item-edit`).
+- **Project board:** the bot is a project collaborator and its token has the `project` scope, so
+  board status changes use the bot's token too (`GH_TOKEN=... gh project item-edit ...`).
+- **Token:** the bot is logged in with a classic token (`repo`, `project`, `read:org`) that
+  expires on 2027-02-20. When `gh` calls as the bot start failing with auth errors, the maintainer
+  generates a new one and runs `pbpaste | gh auth login --hostname github.com --with-token`,
+  then `gh auth switch --user BryceARich`.
 
 ## The licensed-data rule
 
