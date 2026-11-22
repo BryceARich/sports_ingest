@@ -2,14 +2,14 @@
 
 Start here after time away. Update this file at the end of every milestone.
 
-_Last updated: 2026-11-22 (during M0)._
+_Last updated: 2026-11-22 (end of M0)._
 
 ## Current status
 
 | Milestone | State |
 |---|---|
-| M0 Documentation & conventions | **in progress**: M0-01 (this file, `CLAUDE.md`) and M0-02 (`ARCHITECTURE.md`, ADRs) done; M0-03 open |
-| M1 Foundation | not started, no gem code exists yet |
+| M0 Documentation & conventions | **done**: `CLAUDE.md`, this file, `ARCHITECTURE.md`, ADRs, issue/PR templates, `CONTRIBUTING.md` |
+| M1 Foundation | **next**: no gem code exists yet |
 | M2 to M7 | not started |
 | M8 Later | not scheduled |
 
@@ -18,9 +18,9 @@ M1-01 (gem skeleton) lands. Until then, setup ends at step 4 below.
 
 ## Next 3 issues to take
 
-1. **M0-03** Issue/PR templates, CONTRIBUTING, CHANGELOG (#3)
-2. **M1-01** Gem skeleton (#4)
-3. **M1-02** CI matrix (#5)
+1. **M1-01** Gem skeleton (#4)
+2. **M1-02** CI matrix (#5)
+3. **M1-03** Modular loading (#6)
 
 All issues and their order are on GitHub: <https://github.com/BryceARich/sports_ingest/issues>.
 The `[Mx-yy]` prefix in each title is the build order.
@@ -79,6 +79,8 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 | Path | Contents |
 |---|---|
 | `CLAUDE.md` | Project rules: conventions, commands, licensed-data rule |
+| `CONTRIBUTING.md` | Issues, branches, commit style, PRs, how Claude Code is used |
+| `.github/` | Issue and PR templates, `CODEOWNERS` |
 | `docs/RESUME.md` | This file |
 | `docs/ARCHITECTURE.md` | Data-flow diagram, module map, how to add a source |
 | `docs/adr/` | Architecture decision records; index and template in `docs/adr/README.md` |
