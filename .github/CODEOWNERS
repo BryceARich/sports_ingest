@@ -1,0 +1,4 @@
+# Every change to this repo needs a review from the maintainer.
+# The "Protect main" ruleset requires code-owner approval; the maintainer can
+# bypass it on their own PRs (GitHub does not allow approving your own PR).
+* @BryceARich
