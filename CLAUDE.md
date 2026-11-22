@@ -60,6 +60,32 @@ bundle exec rake fixtures:record      # re-record fixtures against live sources 
 - Every change adds a line under "Unreleased" in `CHANGELOG.md` (Keep a Changelog format).
 - Branch per issue, named after its build order (for example `m1-04-configuration`). Reference the
   issue in the PR, and tick its Definition of Done checklist.
+- `main` is protected by the "Protect main" ruleset: changes only arrive through PRs, which need a
+  code-owner approval (`.github/CODEOWNERS`). Never push to `main` directly. The maintainer approves
+  Claude's PRs like any outside contribution; the admin bypass is only for PRs they open themselves.
+
+## Claude's GitHub identity
+
+Claude works as the machine account **BryceAIRich**, not as the maintainer, so the maintainer can
+review and approve its PRs. Both accounts are logged in to `gh`; the maintainer stays the active one.
+
+- **`gh` calls** (PRs, issues, comments): prefix with the bot's token, never `gh auth switch`:
+  `GH_TOKEN=$(gh auth token --user BryceAIRich) gh pr create ...`
+- **Commits:** author them as the bot:
+  `git -c user.name=BryceAIRich -c user.email=360013208+BryceAIRich@users.noreply.github.com commit ...`
+- **Pushes:** push to the `bot` remote, never `origin`: `git push -u bot <branch>`.
+  The `bot` remote and its credential helper live in this clone's local git config (not committed);
+  on a fresh clone, set them up with:
+
+  ```bash
+  git remote add bot https://BryceAIRich@github.com/BryceARich/sports_ingest.git
+  git config --local --add 'credential.https://BryceAIRich@github.com.helper' ''
+  git config --local --add 'credential.https://BryceAIRich@github.com.helper' \
+    '!f() { test "$1" = get && echo username=BryceAIRich && echo "password=$(gh auth token --user BryceAIRich)"; }; f'
+  ```
+
+- **Project board:** the bot's token has no `project` scope, so board status changes use the
+  maintainer's token (plain `gh project item-edit`).
 
 ## The licensed-data rule
 
@@ -77,4 +103,6 @@ Evolving-Hockey and PuckPedia data is licensed to the user personally. **It neve
 
 1. Read `docs/RESUME.md` and the issue, including its "Blocked by" list.
 2. Check the issue's Definition of Done before calling it finished.
-3. At the end of each milestone, update `docs/RESUME.md` (status, next 3 issues, gotchas).
+3. When you open the PR, set the issue's Status on the "Sports Ingestion" project board to
+   **Awaiting Human Review** (`gh project item-edit`). Merging the PR moves it to Done.
+4. At the end of each milestone, update `docs/RESUME.md` (status, next 3 issues, gotchas).
