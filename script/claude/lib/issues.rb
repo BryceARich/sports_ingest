@@ -11,6 +11,9 @@ module ClaudeScripts
   PROJECT = "1"
   BOT = "BryceAIRich"
   BOT_EMAIL = "360013208+BryceAIRich@users.noreply.github.com"
+  # The repo is public, so anyone can open an issue. Only the maintainer's issues are worked on,
+  # so a stranger can't get a session (holding the bot's token) to follow their text.
+  TRUSTED_ISSUE_AUTHORS = [OWNER].freeze
   UNSCHEDULED_MILESTONE = 8 # M8 "Later" is never started automatically
   TITLE_RE = /\A\[M(\d+)-(\d+)\]\s*(.*)\z/.freeze
 
@@ -61,7 +64,12 @@ module ClaudeScripts
   # All issues (no PRs), trimmed to the fields we use. One paginated REST call.
   def all_issues
     gh_lines("api", "repos/#{REPO}/issues?state=all&per_page=100", "--paginate",
-      "--jq", ".[] | select(.pull_request | not) | {number, title, state, body}")
+      "--jq", ".[] | select(.pull_request | not) | {number, title, state, body, author: .user.login}")
+  end
+
+  # True when the issue was opened by someone in TRUSTED_ISSUE_AUTHORS.
+  def trusted?(issue)
+    TRUSTED_ISSUE_AUTHORS.include?(issue["author"])
   end
 
   # Issue numbers listed under "## Blocked by" in the body (HTML comments ignored).
@@ -134,7 +142,8 @@ module ClaudeScripts
       no_blockers = body_blockers(issue).empty?
 
       reason =
-        if !blockers.empty? then "blocked by #{blockers.map { |b| "##{b}" }.join(", ")}"
+        if !trusted?(issue) then "opened by #{issue["author"]}, not a trusted author"
+        elsif !blockers.empty? then "blocked by #{blockers.map { |b| "##{b}" }.join(", ")}"
         elsif no_blockers && build_order(issue["title"])[0] > current_ms then "milestone not open yet"
         elsif status && status != "Todo" then "status is #{status}"
         elsif pr_issues.include?(n) then "has an open PR"

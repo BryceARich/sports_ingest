@@ -120,5 +120,9 @@ Two slash commands in `.claude/commands/` script this:
   whose blockers have all closed and starts a fresh headless session for each one in its own
   worktree (`../sports_ingest-worktrees/<branch>`), working as the bot. It starts at most 3 by default.
 
+The repo is public, so both only trust the maintainer: the scripts skip issues anyone else opened,
+and `/work-issue` reads only comments from the maintainer and the bot. Keep it that way; a session
+holds the bot's token and can run code on the maintainer's machine.
+
 Helpers in `script/claude/` (stdlib Ruby + `gh`): `ready-issues [--all | --check N]` and
 `set-status N "<Status>"`. Use them instead of hand-written `gh` queries, which cost more tokens.
