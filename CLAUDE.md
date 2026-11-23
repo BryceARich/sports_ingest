@@ -33,8 +33,7 @@ Design rules already decided (each has an ADR in [`docs/adr/`](docs/adr/README.m
 
 ## Commands
 
-When these commands change, update this list and `docs/RESUME.md` together. The fixtures task
-arrives in M1-10.
+When these commands change, update this list and `docs/RESUME.md` together.
 
 ```bash
 mise install                 # install the Ruby version pinned in .ruby-version
@@ -43,7 +42,7 @@ bundle exec rspec            # tests (offline, from fixtures)
 bundle exec rubocop          # lint (standard config)
 bundle exec yard doc         # build API docs into doc/
 bundle exec rake yard:coverage       # doc coverage, lists what's undocumented; CI fails below 90%
-bundle exec rake fixtures:record      # re-record fixtures against live sources (M1-10)
+bundle exec rake fixtures:record[path] # re-record VCR cassettes against live sources (ADR 0013)
 bundle exec rake changelog:check adr:check   # fragments parse, ADR index rows are right (CI runs this)
 bundle exec rake changelog:preview    # the release section the fragments would make
 bundle exec rake release:prepare[x.y.z]  # at release: compile fragments into CHANGELOG.md, rewrite the ADR index
@@ -59,7 +58,8 @@ script/licensed-data-guard --all      # check tracked files for EH / PuckPedia d
   belongs in the README, reasons in an ADR, so comments don't drift from the code.
 - Raise errors from the gem's own hierarchy (M1-09), never bare `RuntimeError` or library errors.
 - HTTP only goes through the shared client (M1-05). Adapters never call `Net::HTTP` directly.
-- Specs never hit the network. Use the VCR/WebMock fixtures; CI runs fully offline.
+- Specs never hit the network. Tag a spec `vcr: {cassette_name: "<source>/<name>"}` to replay a
+  cassette from `spec/fixtures/cassettes/`, or stub with WebMock; CI runs fully offline (ADR 0013).
 - Configuration goes through `SportsIngest.configure` or env vars. **Secrets** (`espn_s2`, `SWID`)
   are redacted in `inspect` and logs, scrubbed from cassettes, and never committed.
 - Any decision with real alternatives gets an ADR in `docs/adr/`, named after the issue

@@ -34,7 +34,7 @@ runtime dependency:
   what suits its source. The user agent comes from `SportsIngest.configuration` at request time.
 
 Specs stub responses with WebMock, a development dependency that also blocks real network calls in
-every spec. Fixture recording (VCR, M1-10) builds on it.
+every spec. Fixture recording (VCR, [ADR 0013](0013-vcr-cassettes-for-fixtures.md)) builds on it.
 
 ## Alternatives considered
 
