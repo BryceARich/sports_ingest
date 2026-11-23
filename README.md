@@ -39,6 +39,12 @@ require "sports_ingest"
 SportsIngest::VERSION # => "0.1.0"
 ```
 
+Each source loads on its own, with core but no other source:
+
+```ruby
+require "sports_ingest/nhl" # SportsIngest::NHL, nothing from ESPN, nflverse or CSV
+```
+
 ## Development
 
 Ruby is pinned in `.ruby-version` and installed with [mise](https://mise.jdx.dev).

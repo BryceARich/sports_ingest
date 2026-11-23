@@ -14,11 +14,7 @@ require "zeitwerk"
 #   require "sports_ingest"
 #   SportsIngest::VERSION # => "0.1.0"
 module SportsIngest
-  # Sources with their own entry point (+require "sports_ingest/<source>"+) and Zeitwerk loader.
-  # The core loader ignores their files so that requiring core loads none of them (ADR 0009).
-  #
-  # @example
-  #   SportsIngest::SOURCES # => ["nhl", "espn", "nflverse", "advanced_hockey"]
+  # Sources that load separately, through their own loader (ADR 0009).
   SOURCES = %w[nhl espn nflverse advanced_hockey].freeze
 
   # The Zeitwerk loader for the gem's core.

@@ -104,7 +104,7 @@ Loading rules (M1-03):
   source's constants or a source-specific dependency (for example, requiring `nhl` must not load
   `CSV` or anything under `ESPN`).
 - Core's Zeitwerk loader ignores every source listed in `SportsIngest::SOURCES`. Each source's
-  entry point builds its own loader for its folder with `SportsIngest::SourceLoader.setup`
+  entry point gets its own loader for its folder with `extend SourceLoader` and `load_from`
   ([ADR 0009](adr/0009-one-zeitwerk-loader-per-source.md)).
 - Core has **no native-extension dependencies**, so it installs on a Raspberry Pi without a compiler
   fight. A source may add a dependency only if it installs cleanly on the Pi.
@@ -117,7 +117,7 @@ Loading rules (M1-03):
 2. **Add an ADR** if adding the source involves a real choice (a new dependency, a new auth scheme,
    scraping versus manual export, and so on).
 3. **Create the entry point** `lib/sports_ingest/<source>.rb`, which requires core and sets up
-   Zeitwerk for `lib/sports_ingest/<source>/` only through `SourceLoader.setup` (copy `nhl.rb`).
+   Zeitwerk for `lib/sports_ingest/<source>/` only, with `extend SourceLoader` (copy `nhl.rb`).
    Add the source to `SportsIngest::SOURCES`, an acronym to `SourceLoader::INFLECTIONS` if it has
    one, and the source to `spec/sports_ingest/modular_loading_spec.rb` so it proves no other
    source is loaded.

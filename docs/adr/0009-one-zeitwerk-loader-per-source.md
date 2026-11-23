@@ -15,10 +15,10 @@ their dependencies.
 ## Decision
 
 The core loader ignores each source's entry point and folder, listed in `SportsIngest::SOURCES`.
-Each entry point (`lib/sports_ingest/<source>.rb`) requires core, defines the source's module and
-calls `SportsIngest::SourceLoader.setup`, which builds a separate Zeitwerk loader for
-`lib/sports_ingest/<source>/` with the source's module as its namespace. Acronyms (`nhl` → `NHL`,
-`espn` → `ESPN`) live in `SourceLoader::INFLECTIONS`.
+Each entry point (`lib/sports_ingest/<source>.rb`) requires core and defines the source's module,
+which extends `SportsIngest::SourceLoader` and calls `load_from` to build a separate Zeitwerk
+loader for `lib/sports_ingest/<source>/`. Acronyms (`nhl` → `NHL`, `espn` → `ESPN`) live in
+`SourceLoader::INFLECTIONS`.
 
 A spec requires each entry point in a fresh Ruby process and checks that no other source module and
 no `CSV` got defined.
