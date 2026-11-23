@@ -63,7 +63,9 @@ bundle exec rubocop           # 4. lint: should be clean
 `mise current ruby` should print the version in `.ruby-version`.
 
 Optional, only for ESPN private leagues (M4): copy your `espn_s2` and `SWID` cookies into
-environment variables (names are defined in M1-04). Never put them in a committed file.
+`SPORTS_INGEST_ESPN_S2` and `SPORTS_INGEST_ESPN_SWID` (for example in your shell profile, or an
+untracked `.env`). Never put them in a committed file. Other settings (`SPORTS_INGEST_CACHE_DIR`,
+`SPORTS_INGEST_TTL_<SOURCE>`, ...) are listed in `SportsIngest::Configuration` and ADR 0010.
 
 ## How to run everything
 
@@ -93,7 +95,8 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 | `CHANGELOG.md` | Keep a Changelog, newest at top |
 | `lib/sports_ingest/` | Gem code, one folder per source (M1) |
 | `spec/` | RSpec specs and recorded fixtures (M1) |
-| Data and caches | **Outside the repo** by default; exact path set in M1-04/M1-11 |
+| Caches | `$XDG_CACHE_HOME/sports_ingest` or `~/.cache/sports_ingest`; override with `SPORTS_INGEST_CACHE_DIR` (M1-04) |
+| Data | **Outside the repo** by default; exact path set in M1-11 |
 | EH / PuckPedia exports | A local folder you drop exports into, never inside the repo |
 
 ## Known gotchas

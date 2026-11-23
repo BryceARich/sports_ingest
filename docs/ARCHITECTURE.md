@@ -83,11 +83,11 @@ Planned layout under `lib/` (Zeitwerk autoloading, one constant per file, paths 
 |---|---|---|---|
 | `lib/sports_ingest.rb` | `SportsIngest` | `require "sports_ingest"` (core only) | M1-01 |
 | `lib/sports_ingest/source_loader.rb` | `SportsIngest::SourceLoader` | core | M1-03 |
-| `lib/sports_ingest/configuration.rb` | `SportsIngest::Configuration` | core | M1-04 |
+| `lib/sports_ingest/configuration.rb` | `SportsIngest::Configuration` (+ `Configurable`, `Secret`) | core | M1-04 |
 | `lib/sports_ingest/http/` | `SportsIngest::HTTP::*` | core | M1-05 |
 | `lib/sports_ingest/cache/` | `SportsIngest::Cache::*` (raw and processed tiers) | core | M1-06, M1-07 |
 | `lib/sports_ingest/model.rb` | `SportsIngest::Model` (base) | core | M1-08 |
-| `lib/sports_ingest/errors.rb` | `SportsIngest::Error` and subclasses | core | M1-09 |
+| `lib/sports_ingest/error.rb`, `*_error.rb` | `SportsIngest::Error` and subclasses, one per file | core | M1-04 (base), M1-09 |
 | `lib/sports_ingest/identity/` | `PlayerRef`, normalizer, matcher, crosswalk | core | M3 |
 | `lib/sports_ingest/nhl.rb` + `nhl/` | `SportsIngest::NHL` | `require "sports_ingest/nhl"` | M2 |
 | `lib/sports_ingest/espn.rb` + `espn/` | `SportsIngest::ESPN` | `require "sports_ingest/espn"` | M4 |
@@ -121,8 +121,10 @@ Loading rules (M1-03):
    Add the source to `SportsIngest::SOURCES`, an acronym to `SourceLoader::INFLECTIONS` if it has
    one, and the source to `spec/sports_ingest/modular_loading_spec.rb` so it proves no other
    source is loaded.
-4. **Configuration.** Add the source's TTL (and any secrets) to `SportsIngest.configure` and env
-   vars. Secrets must be redacted in `inspect` and logs and scrubbed from cassettes.
+4. **Configuration.** Add the source's default TTL to `Configuration::DEFAULT_TTLS` (its
+   `SPORTS_INGEST_TTL_<SOURCE>` env var then works on its own) and any secrets as
+   `SportsIngest::Secret` settings ([ADR 0010](adr/0010-configuration-and-secrets.md)), which keeps
+   them out of `inspect` and logs. Scrub them from cassettes too.
 5. **Adapter.** Fetch through the shared HTTP client (never `Net::HTTP`), or read user-supplied files
    for file-based sources. Map payloads to models. Raise only gem errors; raise
    `SourceChangedError` when the payload shape is unexpected instead of returning partial data.

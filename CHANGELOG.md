@@ -14,6 +14,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `SportsIngest.configure` / `SportsIngest.configuration`: cache directory (defaults to
+  `$XDG_CACHE_HOME/sports_ingest` or `~/.cache/sports_ingest`, outside the repo), user agent,
+  per-source TTLs and the ESPN `espn_s2` / `SWID` cookies, each also settable through a
+  `SPORTS_INGEST_*` env var. The cookies are `SportsIngest::Secret`s that print `[REDACTED]` in
+  `inspect`, logs and JSON. Adds `SportsIngest::Error` and `ConfigurationError`, and ADR 0010 (M1-04).
 - GitHub Actions CI (`.github/workflows/ci.yml`): specs and RuboCop on macOS (Intel) and Ubuntu
   (ARM64), Ruby from `.ruby-version` through `ruby/setup-ruby`. `bin/setup` and the Mac and Pi
   setup in `docs/RESUME.md` now turn on mise's `idiomatic_version_file_enable_tools` for Ruby so
