@@ -64,8 +64,8 @@ What each layer does:
 | Layer | Responsibility | Must not |
 |---|---|---|
 | **Sources** | External systems we read from. | — (we don't control them) |
-| **HTTP client** (M1-05) | The only way out to the network: timeouts, retry with backoff on 429/5xx, per-host rate limits, user agent, gzip. Reads and writes the raw cache. | Know anything about a source's payload shape. |
-| **Raw cache** (M1-06) | Stores HTTP responses keyed by request, with a TTL per source; serves a stale copy when the network fails. | Hold licensed data (it never goes over HTTP). |
+| **HTTP client** (M1-05) | The only way out to the network: timeouts, retry with backoff on 429/5xx, per-host rate limits, user agent, gzip. Knows nothing about caching; `Cache::Raw` wraps it. | Know anything about a source's payload shape. |
+| **Raw cache** (M1-06) | `Cache::Raw` wraps the HTTP client: stores responses keyed by request in memory, on disk or not at all, with a TTL per source; serves a stale copy (`stale: true`, original `fetched_at`) when the network fails ([ADR 0009](adr/0009-raw-cache-stores-and-stale-on-error.md)). | Hold licensed data (it never goes over HTTP). |
 | **Adapters** | One per source. Turn raw payloads or imported files into models. Raise only `SportsIngest::Error` subclasses (M1-09), and `SourceChangedError` when a payload's shape is unexpected. | Call `Net::HTTP` directly, or load another source's code. |
 | **Models** (M1-08) | Immutable value objects with `to_h` / `to_json` / `from_h` and a schema version. Players carry a `PlayerRef` with the canonical ID plus per-source IDs. | Do I/O. |
 | **Crosswalk** (M3) | Maps each source's player IDs to the canonical ID: normalizer, tiered matcher, manual overrides, persisted JSON map. | Re-run fuzzy matching for a player that is already resolved. |
@@ -85,7 +85,7 @@ Planned layout under `lib/` (Zeitwerk autoloading, one constant per file, paths 
 | `lib/sports_ingest/source_loader.rb` | `SportsIngest::SourceLoader` | core | M1-03 |
 | `lib/sports_ingest/configuration.rb` | `SportsIngest::Configuration` (+ `Configurable`, `Secret`) | core | M1-04 |
 | `lib/sports_ingest/http.rb` + `http/` | `SportsIngest::HTTP`: `Client`, `Response`, `Backoff`, `RateLimiter` ([ADR 0008](adr/0008-http-client-on-net-http.md)) | core | M1-05 |
-| `lib/sports_ingest/cache/` | `SportsIngest::Cache::*` (raw and processed tiers) | core | M1-06, M1-07 |
+| `lib/sports_ingest/cache.rb` + `cache/` | `SportsIngest::Cache`: `Raw`, `MemoryStore`, `DiskStore`, `NullStore` (M1-06); processed tier (M1-07) | core | M1-06, M1-07 |
 | `lib/sports_ingest/model.rb` + `model/` | `SportsIngest::Model` (base, on `Data`, [ADR 0011](adr/0011-models-on-ruby-data.md)) | core | M1-08 |
 | `lib/sports_ingest/error.rb`, `*_error.rb`, `not_found.rb` | `SportsIngest::Error` and subclasses, one per file ([ADR 0012](adr/0012-error-hierarchy.md)) | core | M1-04 (base), M1-09 |
 | `lib/sports_ingest/identity/` | `PlayerRef`, normalizer, matcher, crosswalk | core | M3 |
@@ -134,7 +134,8 @@ Loading rules (M1-03):
    ([ADR 0004](adr/0004-canonical-player-ids.md)).
 7. **Time ranges.** Any method that loads a span of seasons takes `seasons:` or `last: N`
    ([ADR 0006](adr/0006-seasons-and-last-n-convention.md)).
-8. **Caching.** HTTP responses go through the raw cache automatically; save the normalized,
+8. **Caching.** Wrap the source's client in `Cache::Raw` (`Cache::Raw.new(client: HTTP::Client.new(source: :x))`)
+   so responses go through the raw cache; save the normalized,
    matched result to the processed cache so consumers never re-import.
 9. **Tests.** Record fixtures (VCR/WebMock) so specs run offline. Licensed sources use the real
    column layout with invented values.
