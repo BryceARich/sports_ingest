@@ -21,3 +21,4 @@ didn't, and what follows. See [`../ARCHITECTURE.md`](../ARCHITECTURE.md) for how
 | [0004](0004-canonical-player-ids.md) | Canonical player IDs with a per-source crosswalk | Accepted |
 | [0005](0005-licensed-data-never-committed.md) | Licensed data is never committed | Accepted |
 | [0006](0006-seasons-and-last-n-convention.md) | One time-range convention: `seasons:` or `last: N` | Accepted |
+| [0007](0007-ruby-toolchain.md) | Pin Ruby with mise, autoload with Zeitwerk, lint with Standard | Proposed |

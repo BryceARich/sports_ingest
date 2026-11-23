@@ -33,8 +33,8 @@ Design rules already decided (each has an ADR in [`docs/adr/`](docs/adr/README.m
 
 ## Commands
 
-The gem skeleton arrives in M1-01. Until then these commands don't work yet; when they
-change, update this list and `docs/RESUME.md` together.
+When these commands change, update this list and `docs/RESUME.md` together. The fixtures task
+arrives in M1-10.
 
 ```bash
 mise install                 # install the Ruby version pinned in .ruby-version

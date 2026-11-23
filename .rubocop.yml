@@ -1,0 +1,16 @@
+# Style is Standard Ruby (https://github.com/standardrb/standard), run through RuboCop so
+# `bundle exec rubocop` works. Don't add overrides here or disable cops inline without a
+# comment saying why (see CLAUDE.md).
+require:
+  - standard
+
+inherit_gem:
+  standard: config/base.yml
+
+AllCops:
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "doc/**/*"
+    - "pkg/**/*"
+    - "vendor/**/*"
