@@ -95,6 +95,9 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 
 - **macOS system Ruby (2.6) is too old.** Make sure `which ruby` points into mise, not `/usr/bin/ruby`.
   If it doesn't, the `mise activate` line isn't in your shell profile.
+- **mise ignores `.ruby-version` by default** (mise 2026.x), so `mise install` installs nothing.
+  Until #5 fixes setup, run `mise settings add idiomatic_version_file_enable_tools ruby` once per
+  machine. `mise current ruby` should then print `4.0.10`.
 - **The Pi is slow to build Ruby** and native gems. That's why core avoids native extensions:
   adding one means checking it installs on the Pi first.
 - **Licensed data:** EH and PuckPedia files must never be committed, including derived caches and
