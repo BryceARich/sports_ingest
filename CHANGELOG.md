@@ -8,6 +8,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `.claude/commands/work-issue.md` and `.claude/commands/spawn-unblocked.md`: `/work-issue` takes
+  one issue from Todo to a PR awaiting review, and `/spawn-unblocked` starts a fresh headless
+  Claude session in its own worktree for each issue whose blockers have merged. The GitHub
+  queries live in `script/claude/` (`ready-issues`, `spawn-unblocked`, `set-status`) so they can
+  run without Claude. Because the repo is public, they only act on issues and comments from people
+  with a role on the repo. The AI account is set per clone (`git config claude.botUser`, shown by
+  `script/claude/identity`), so no account names are hardcoded.
 - Issue templates (Task, Bug, Consumer request) with Context, Acceptance criteria, Blocked by and
   the Definition of Done; a PR template with the DoD checklist; and `CONTRIBUTING.md` covering
   branching, commit style and how Claude Code is used here (M0-03).

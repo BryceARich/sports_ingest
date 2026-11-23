@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Lists issues that are ready to start (all blockers merged, milestone open, not already taken).
+#
+#   script/claude/ready-issues            # ready issues only
+#   script/claude/ready-issues --all      # also show skipped issues and why
+#   script/claude/ready-issues --check N  # exit 0 if issue N is trusted and has no open blockers, else exit 1
+require_relative "lib/issues"
+include ClaudeScripts
+
+if ARGV[0] == "--check"
+  n = Integer(ARGV[1] || abort("usage: ready-issues --check <issue number>"))
+  issues = all_issues
+  issue = issues.find { |i| i["number"] == n } || abort("issue ##{n} not found")
+  unless trusted?(issue)
+    puts "##{n}: opened by #{issue["author"]}, who has no role on the repo (#{issue["association"]})"
+    exit 1
+  end
+  states = issues.map { |i| [i["number"], i["state"]] }.to_h
+  open = open_blockers(issue, states)
+  if open.empty?
+    puts "##{n}: no open blockers"
+  else
+    puts "##{n}: blocked by #{open.map { |b| "##{b} (#{states[b] || "open"})" }.join(", ")}"
+    exit 1
+  end
+  exit 0
+end
+
+ready, skipped = classify
+ready.each { |r| puts "READY  ##{r[:issue]["number"]}  #{label(r[:issue])}  #{r[:branch]}" }
+puts "(none ready)" if ready.empty?
+if ARGV.include?("--all")
+  skipped.each { |s| puts "skip   ##{s[:issue]["number"]}  #{label(s[:issue])}  #{s[:reason]}" }
+else
+  puts "#{skipped.size} skipped (--all to list)"
+end
