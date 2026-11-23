@@ -8,6 +8,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- GitHub Actions CI (`.github/workflows/ci.yml`): specs and RuboCop on macOS (Intel) and Ubuntu
+  (ARM64), Ruby from `.ruby-version` through `ruby/setup-ruby`. `bin/setup` and the Mac and Pi
+  setup in `docs/RESUME.md` now turn on mise's `idiomatic_version_file_enable_tools` for Ruby so
+  `mise install` reads `.ruby-version`, replacing the temporary gotcha. ADR 0008 records both (M1-02).
 - Gem skeleton: `sports_ingest.gemspec`, Bundler, Ruby 4.0.10 pinned in `.ruby-version` and installed
   with mise, Zeitwerk autoloading, RSpec, RuboCop with the Standard config, YARD options,
   `bin/console`, a README with the project's goals, and ADR 0007 on the toolchain. The

@@ -33,7 +33,10 @@ The `[Mx-yy]` prefix in each title is the build order.
 xcode-select --install        # compilers; skip if already installed
 brew install mise libyaml openssl@3 git
 echo 'eval "$(mise activate zsh)"' >> ~/.zshrc && exec zsh
+mise settings add idiomatic_version_file_enable_tools ruby   # let mise read .ruby-version
 ```
+
+`libyaml` has to be installed before `mise install`, or Ruby's psych extension fails to build.
 
 ### Raspberry Pi (64-bit Ubuntu or Raspberry Pi OS)
 
@@ -42,6 +45,7 @@ sudo apt update
 sudo apt install -y git build-essential libssl-dev libyaml-dev zlib1g-dev libffi-dev libreadline-dev
 curl https://mise.run | sh
 echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc && exec bash
+mise settings add idiomatic_version_file_enable_tools ruby   # let mise read .ruby-version
 ```
 
 ### Both
@@ -55,7 +59,8 @@ bundle exec rspec             # 3. tests: should be green, fully offline
 bundle exec rubocop           # 4. lint: should be clean
 ```
 
-`bin/setup` runs steps 1 and 2 for you.
+`bin/setup` runs steps 1 and 2 for you, and adds the mise setting above if it's missing.
+`mise current ruby` should print the version in `.ruby-version`.
 
 Optional, only for ESPN private leagues (M4): copy your `espn_s2` and `SWID` cookies into
 environment variables (names are defined in M1-04). Never put them in a committed file.
@@ -80,7 +85,7 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 |---|---|
 | `CLAUDE.md` | Project rules: conventions, commands, licensed-data rule |
 | `CONTRIBUTING.md` | Issues, branches, commit style, PRs, how Claude Code is used |
-| `.github/` | Issue and PR templates, `CODEOWNERS` |
+| `.github/` | Issue and PR templates, `CODEOWNERS`, the CI workflow (`workflows/ci.yml`) |
 | `docs/RESUME.md` | This file |
 | `docs/ARCHITECTURE.md` | Data-flow diagram, module map, how to add a source |
 | `docs/adr/` | Architecture decision records; index and template in `docs/adr/README.md` |
@@ -95,9 +100,13 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 
 - **macOS system Ruby (2.6) is too old.** Make sure `which ruby` points into mise, not `/usr/bin/ruby`.
   If it doesn't, the `mise activate` line isn't in your shell profile.
-- **mise ignores `.ruby-version` by default** (mise 2026.x), so `mise install` installs nothing.
-  Until #5 fixes setup, run `mise settings add idiomatic_version_file_enable_tools ruby` once per
-  machine. `mise current ruby` should then print `4.0.10`.
+- **mise ignores `.ruby-version` by default** (mise 2026.x): if `mise install` installs nothing or
+  `mise current ruby` warns "does not have a version set", the
+  `mise settings add idiomatic_version_file_enable_tools ruby` step from setup is missing. Running
+  `bin/setup` adds it. See ADR 0008.
+- **CI runs on macOS (Intel) and Ubuntu (ARM64)** (`.github/workflows/ci.yml`) and reads
+  `.ruby-version`, so bumping Ruby there bumps CI too. A new Ruby can take a few days to appear in
+  `ruby/setup-ruby`; bump `.ruby-version` only once CI is green with it.
 - **The Pi is slow to build Ruby** and native gems. That's why core avoids native extensions:
   adding one means checking it installs on the Pi first.
 - **Licensed data:** EH and PuckPedia files must never be committed, including derived caches and
