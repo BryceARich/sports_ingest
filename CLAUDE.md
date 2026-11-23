@@ -50,7 +50,9 @@ bundle exec rake fixtures:record      # re-record fixtures against live sources 
 
 - Ruby, Zeitwerk autoloading, one constant per file, file paths match constant names.
 - Style is RuboCop with the `standard` config. Don't disable cops inline without a comment saying why.
-- Every public method gets a YARD comment: what it does, `@param`, `@return`, `@raise`, and an `@example`.
+- Every public method gets a YARD comment: a one-line summary, `@param`, `@return`, `@raise`, and an
+  `@example` only when usage isn't obvious from the signature. Keep prose comments short: usage
+  belongs in the README, reasons in an ADR, so comments don't drift from the code.
 - Raise errors from the gem's own hierarchy (M1-09), never bare `RuntimeError` or library errors.
 - HTTP only goes through the shared client (M1-05). Adapters never call `Net::HTTP` directly.
 - Specs never hit the network. Use the VCR/WebMock fixtures; CI runs fully offline.

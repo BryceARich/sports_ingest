@@ -14,6 +14,9 @@ require "zeitwerk"
 #   require "sports_ingest"
 #   SportsIngest::VERSION # => "0.1.0"
 module SportsIngest
+  # Sources that load separately, through their own loader (ADR 0009).
+  SOURCES = %w[nhl espn nflverse advanced_hockey].freeze
+
   # The Zeitwerk loader for the gem's core.
   #
   # @return [Zeitwerk::Loader] the loader that autoloads +lib/sports_ingest/+
@@ -24,5 +27,6 @@ module SportsIngest
   end
 
   @loader = Zeitwerk::Loader.for_gem
+  SOURCES.each { |source| @loader.ignore("#{__dir__}/sports_ingest/#{source}{.rb,}") }
   @loader.setup
 end
