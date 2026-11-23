@@ -32,11 +32,11 @@ module SportsIngest
       # @raise [NotFound] if the team code is unknown, or the NHL has no such roster
       # @raise [ArgumentError] if +season+ isn't a valid start year
       # @raise [SourceChangedError] if the payload isn't shaped as expected
-      # @raise [HTTPError, ParseError] as {Client#web} does
+      # @raise [HTTPError, ParseError] as {Client#get_json} does
       def fetch(team, season: nil)
         team = team.is_a?(Team) ? team : Teams.fetch(team)
         season_key = season.nil? ? "current" : Season.id(season)
-        response = @client.web_response("roster/#{team.tri_code}/#{season_key}")
+        response = @client.get(@client.url_for("roster/#{team.tri_code}/#{season_key}"))
         players = parse(@client.parse(response), team: team.tri_code)
         @processed&.write("nhl/rosters/#{team.tri_code}/#{season_key}", players, source: Client::SOURCE,
           fetched_at: response.fetched_at, model: Player)

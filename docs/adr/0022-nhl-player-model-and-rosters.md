@@ -24,8 +24,9 @@ client yet, and M2-02 and M2-06 were being built at the same time.
   defensemen then goalies, and writes them to the processed cache under
   `nhl/rosters/<TRI_CODE>/<season ID or current>`. `team` is anything `Teams.fetch` resolves.
   `season: nil` asks for `/current` rather than computing the current season.
-- `SportsIngest::NHL::Client#web(path)` is the one way NHL adapters reach `api-web.nhle.com`;
-  `SportsIngest::NHL::Season.id(2025)` turns ADR 0006's start year into `"20252026"`.
+- Rosters reach `api-web.nhle.com` through the shared `SportsIngest::NHL::Client` (the same file
+  M2-02 and M2-06 add); `SportsIngest::NHL::Season.id(2025)` turns ADR 0006's start year into
+  `"20252026"`.
 
 ## Alternatives considered
 
