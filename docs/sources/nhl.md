@@ -95,6 +95,11 @@ seconds at most while live.
   "NY Rangers" / "NY Islanders" where `teamName` says "New York". `/standings/{date}` for an
   off-season date may come back with an empty `standings` list (unverified; `Standings` handles it).
 - **Unknown IDs return `404`** (e.g. `/player/1/landing`); map that to `SportsIngest::NotFound`.
+- **Rosters:** `/roster/{TEAM}/{season}` returns `forwards`, `defensemen` and `goalies`. Names and
+  birth cities are localized objects (`{"default": "Jiří", "cs": ...}`); `sweaterNumber` and
+  `birthStateProvince` are often missing. A team code with no roster that season (e.g.
+  `ARI/20232024`) answers `200` with `{}`; an unknown code answers `404` with an HTML page.
+  Recorded as `nhl/roster_edm_20252026` on 2026-11-23.
 - **Shapes change between seasons** without notice. Re-record fixtures at the start of each
   season and update the date above.
 

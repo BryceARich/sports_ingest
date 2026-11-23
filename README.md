@@ -88,6 +88,23 @@ Each `Standing` carries `team_id` from `SportsIngest::Teams`, ranks, the clinch 
 `home` / `road` / `last_10` records. Other NHL paths go through `SportsIngest::NHL::Client`
 (`get_json`, `stats_json`).
 
+### NHL rosters
+
+```ruby
+require "sports_ingest/nhl"
+
+rosters = SportsIngest::NHL::Rosters.new
+players = rosters.fetch("EDM")             # current season; any team code works
+rosters.fetch("EDM", season: 2024)         # 2024-25 (seasons are named by start year)
+
+mcdavid = players.find { it.last_name == "McDavid" }
+mcdavid.id          # => "8478402", the NHL ID and canonical ID
+mcdavid.position    # => "C" (C, L, R, D or G); also forward?, defense?, goalie?
+mcdavid.birth_date  # => #<Date: 1997-01-13>
+```
+
+Each roster is also saved to the processed cache under `nhl/rosters/<TEAM>/<20242025 or current>`.
+
 ### Evolving-Hockey skater GAR
 
 Download EH's skater GAR table as CSV (`EH_gar_sk_stats_regular_<date>.csv`) into a folder
