@@ -56,3 +56,9 @@ bin/console           # IRB with the gem loaded
 Rules for contributing (branches, commits, PRs, the Definition of Done) are in
 [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`CLAUDE.md`](CLAUDE.md). The architecture is in
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), and decisions in [`docs/adr/`](docs/adr/README.md).
+
+## License
+
+The code is available under the [MIT License](LICENSE.txt). The license covers this code only:
+data you read with it stays under each source's own terms, and Evolving-Hockey and PuckPedia
+exports are licensed to you personally and never belong in this repo.

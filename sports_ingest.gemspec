@@ -13,6 +13,7 @@ Gem::Specification.new do |spec|
     manually exported licensed files, and turns it into clean, cached Ruby models that other
     projects consume. Each source loads separately and core has no native-extension dependencies.
   DESC
+  spec.license = "MIT"
   spec.homepage = "https://github.com/BryceARich/sports_ingest"
   spec.required_ruby_version = ">= 4.0"
 
@@ -22,7 +23,7 @@ Gem::Specification.new do |spec|
 
   # Ship only library code and top-level docs; never specs, fixtures or anything else in git.
   spec.files = Dir.chdir(__dir__) do
-    `git ls-files -z lib README.md CHANGELOG.md`.split("\x0")
+    `git ls-files -z lib README.md CHANGELOG.md LICENSE.txt`.split("\x0")
   end
   spec.require_paths = ["lib"]
 
