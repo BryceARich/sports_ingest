@@ -8,12 +8,19 @@
 
 Evolving-Hockey tables (skater GAR now; goalie GAR and GAR projections next, M6-02 and M6-03)
 arrive as files the maintainer exports by hand ([ADR 0005](0005-licensed-data-never-committed.md)).
-They are often kept as tabs of a spreadsheet (for example `GAR_25-26`), so a file may be EH's own
-CSV or a spreadsheet tab saved as CSV. Column order, header spelling (`EVO_GAR` against
-`EVO GAR`), extra columns, trailing blank rows and a byte-order mark can all differ between the
-two. A season is spelled `25-26` in EH tables, while the gem names seasons by start year
-([ADR 0006](0006-seasons-and-last-n-convention.md)). Players traded mid-season have a combined row
-with a team cell such as `VAN/MIN`.
+The usual input is EH's own CSV download (`EH_gar_sk_stats_regular_<date>.csv`), but a table may
+also come from a spreadsheet tab saved as CSV (for example `GAR_25-26`), where column order, header
+spelling (`EVO_GAR` against `EVO GAR`), extra columns, trailing blank rows and a byte-order mark can
+differ. A season is spelled `26-27` in EH tables, while the gem names seasons by start year
+([ADR 0006](0006-seasons-and-last-n-convention.md)).
+
+EH offers the skater table **grouped by season** or **by team and season**, with the same columns.
+Grouped by season, a traded player has one row with a team cell such as `N.J/WPG`. Grouped by team
+and season, they have a row per team, but EH leaves out short stints there, so those rows don't
+always add up to the season row; the parts are also rounded to one decimal before any sum.
+Checked against both groupings of a 2026-27 export on 2026-11-23: summing the team rows matched the
+season row for 691 of 699 players, was 0.1 off for 5, and missed a stint (a team and its games) for
+3; one traded player had no team row at all. Consumers may want either view.
 
 ## Decision
 
@@ -28,8 +35,14 @@ We will:
   doesn't fit its column, raises `SourceChangedError` naming the line and column; malformed CSV
   raises `ParseError`. Blank, `NA` and `-` cells in numeric columns read as `nil`.
 - Read seasons into their **start year** (`25-26`, `2025-26`, `2025-2026`, `20252026` → `2025`).
-- Keep multi-team cells as **one row with `teams: ["VAN", "MIN"]`**, in export order, because EH
-  reports one combined row per player-season and splitting it would invent per-team numbers.
+- Import **either grouping with the same importer and model**: one `SkaterGar` per row, as
+  exported. A multi-team cell becomes `teams: ["N.J", "WPG"]`, in export order; splitting it into
+  per-team rows would invent numbers. Team abbreviations stay EH's (`N.J`, `L.A`, `S.J`, `T.B`);
+  mapping them to NHL codes belongs with the matcher (M6-06).
+- Offer **`SkaterGar.combine(rows)`** to turn team-grouped rows into one row per player and season
+  (teams joined, counting fields summed). It returns season-grouped rows unchanged, so callers
+  don't need to know which grouping a file had. Its docs say when it can fall short, and to import
+  the season grouping when totals matter.
 
 The shared pieces (`CsvTable`, `TableRow`) are reused by the goalie and projection imports.
 
@@ -40,6 +53,10 @@ The shared pieces (`CsvTable`, `TableRow`) are reused by the goalie and projecti
   every spreadsheet can save as CSV anyway.
 - **Match columns by position.** Simpler, but a reordered or extra column would silently shift
   every value into the wrong field.
+- **Detect the grouping and tag each row with it.** A file only shows its grouping when someone
+  was traded, so the tag would be unreliable early in a season; `combine` works on both anyway.
+- **A separate model or importer per grouping.** The columns are identical, so this would double
+  the code for no gain.
 - **Keep `Team` as the raw string.** Pushes the `/` splitting to every consumer and the matcher
   (M6-06).
 - **Fail on `NA` or blank numbers.** EH is built in R and exports `NA` for missing values; one
@@ -47,7 +64,9 @@ The shared pieces (`CsvTable`, `TableRow`) are reused by the goalie and projecti
 
 ## Consequences
 
-- The maintainer saves the tab as CSV before importing; the README says so.
+- EH's CSV download imports as is; a spreadsheet tab has to be saved as CSV first.
+- Per-team views come only from the team grouping; exact season totals only from the season
+  grouping. Consumers that need both import both files.
 - Header spellings EH might change (a renamed component) surface as `SourceChangedError` with
   the columns found, not as wrong numbers.
 - Two-digit seasons are read as 20xx, which holds for every season EH publishes.

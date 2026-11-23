@@ -46,6 +46,35 @@ module SportsIngest
       :player, :season, :teams, :position, :gp, :toi_all,
       :evo_gar, :evd_gar, :ppo_gar, :shd_gar, :take_gar, :draw_gar,
       :off_gar, :def_gar, :pens_gar, :gar, :war, :spar
-    )
+    ) do
+      # Merges rows for the same player and season into one, as EH's season grouping reports it.
+      #
+      # Use it on an export grouped by team and season, where a traded player has a row per
+      # team. Teams are joined in row order and the counting fields are summed (rounded to one
+      # decimal, like the export); a sum is +nil+ if any part is. Rows that are already one per
+      # player-season come back unchanged, so it's safe on either grouping.
+      #
+      # A combined row can differ from the season grouping's row for the same player: each part
+      # was rounded before summing (off by about 0.1), and EH leaves short stints out of the team
+      # grouping (a team and its games go missing). Import the season grouping when totals matter.
+      #
+      # @param rows [Array<SkaterGar>] rows from {SkaterGarImport}
+      # @return [Array<SkaterGar>] one row per player and season, in order of first appearance
+      # @example
+      #   by_team = SkaterGarImport.read("~/hockey/gar_by_team.csv")
+      #   SkaterGar.combine(by_team).find { it.player == "Avery Testwood" }.teams # => ["N.J", "WPG"]
+      def self.combine(rows)
+        rows.group_by { [it.player, it.season] }.values.map do |group|
+          next group.first if group.one?
+
+          # Everything but the identifying fields is a counting stat.
+          sums = (members - %i[player season teams position]).to_h do |field|
+            values = group.map(&field)
+            [field, values.include?(nil) ? nil : values.sum.round(1)]
+          end
+          group.first.with(teams: group.flat_map(&:teams).uniq, **sums)
+        end
+      end
+    end
   end
 end

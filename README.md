@@ -48,20 +48,25 @@ require "sports_ingest/nhl" # SportsIngest::NHL, nothing from ESPN, nflverse or 
 
 ### Evolving-Hockey skater GAR
 
-Export EH's skater GAR table (or save your spreadsheet tab, such as `GAR_25-26`) as CSV, in a
-folder **outside the repo**, then:
+Download EH's skater GAR table as CSV (`EH_gar_sk_stats_regular_<date>.csv`) into a folder
+**outside the repo**. EH groups it by season or by team and season; both import the same way:
 
 ```ruby
 require "sports_ingest/advanced_hockey"
+include SportsIngest::AdvancedHockey
 
-rows = SportsIngest::AdvancedHockey::SkaterGarImport.read("~/hockey/GAR_25-26.csv")
-rows.first.season # => 2025 (the 25-26 season, named by its start year)
-rows.first.teams  # => ["VAN", "MIN"] for a traded player's combined row
-rows.first.war    # => 2.7
+rows = SkaterGarImport.read("~/hockey/EH_gar_sk_stats_regular_2026-11-23.csv")
+rows.first.season # => 2026 (the 26-27 season, named by its start year)
+rows.first.teams  # => ["N.J", "WPG"] for a traded player, grouped by season
+rows.first.war    # => 0.9
+
+SkaterGar.combine(rows) # one row per player and season, whichever grouping you exported
 ```
 
-Columns are matched by name (`EVO_GAR` or `EVO GAR`), so order and extra columns don't matter.
-A missing column raises `SportsIngest::SourceChangedError` listing the columns it found.
+Grouped by team, a traded player has a row per team, but EH drops short stints from that view, so
+use the season grouping for exact totals. Columns are matched by name (`EVO_GAR` or `EVO GAR`), so
+a spreadsheet tab saved as CSV works too; a missing column raises
+`SportsIngest::SourceChangedError` listing the columns it found.
 
 ## Development
 
