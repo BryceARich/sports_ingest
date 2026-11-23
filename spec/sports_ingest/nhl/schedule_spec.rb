@@ -133,9 +133,47 @@ RSpec.describe SportsIngest::NHL::Schedule do
     expect([game.home_team.score, game.away_team.score]).to eq([3, 2])
   end
 
-  it "raises SourceChangedError when a game isn't shaped as expected" do
-    stub_week("2026-11-16", {"gameWeek" => [{"date" => "2026-11-16", "games" => [game_json("gameState" => "NEW")]}]})
-    expect { schedule.on("2026-11-16") }.to raise_error(SportsIngest::SourceChangedError, /NEW/)
+  it "keeps the NHL's raw codes" do
+    stub_week("2026-11-16", {"gameWeek" => [{"date" => "2026-11-16", "games" => [game_json]}]})
+
+    expect(schedule.on("2026-11-16").first.codes).to eq(game_type: 2, schedule_state: "OK", state: "FUT")
+  end
+
+  context "with codes the gem doesn't know" do
+    before { described_class::WARNED.clear }
+
+    let(:odd_game) do
+      game_json("gameType" => 9, "gameState" => "WARP", "gameScheduleState" => "MOVED",
+        "gameOutcome" => {"lastPeriodType" => "3X3"})
+    end
+
+    it "reads them as :other or :unknown instead of failing the schedule" do
+      stub_week("2026-11-16", {"gameWeek" => [{"date" => "2026-11-16", "games" => [odd_game, game_json("id" => 2)]}]})
+
+      games = nil
+      expect { games = schedule.on("2026-11-16") }.to output(/unknown state code "WARP"/).to_stderr
+      odd = games.find { |g| g.id == "2026020001" }
+
+      expect(games.size).to eq(2)
+      expect(odd).to have_attributes(game_type: :other, state: :unknown, schedule_state: :unknown, ended_in: :unknown)
+      expect(odd.codes).to eq(ended_in: "3X3", game_type: 9, schedule_state: "MOVED", state: "WARP")
+    end
+
+    it "warns once per code" do
+      stub_week("2026-11-16", {"gameWeek" => [{"date" => "2026-11-16", "games" => [odd_game, odd_game]}]})
+
+      expect { 2.times { schedule.on("2026-11-16") } }.to output(satisfy { |err| err.scan("WARP").size == 1 }).to_stderr
+    end
+  end
+
+  it "raises SourceChangedError when a game is missing a field" do
+    stub_week("2026-11-16", {"gameWeek" => [{"date" => "2026-11-16", "games" => [game_json.except("gameState")]}]})
+    expect { schedule.on("2026-11-16") }.to raise_error(SportsIngest::SourceChangedError, /gameState/)
+  end
+
+  it "raises SourceChangedError when a code isn't a String or Integer" do
+    stub_week("2026-11-16", {"gameWeek" => [{"date" => "2026-11-16", "games" => [game_json("gameState" => {"x" => 1})]}]})
+    expect { schedule.on("2026-11-16") }.to raise_error(SportsIngest::SourceChangedError, /2026020001/)
   end
 
   it "raises SourceChangedError when the week is missing" do

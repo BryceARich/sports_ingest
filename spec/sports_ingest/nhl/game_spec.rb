@@ -20,7 +20,8 @@ RSpec.describe SportsIngest::NHL::Game do
   end
 
   it "round-trips through JSON" do
-    game = described_class.new(**fields, state: "final", ended_in: "overtime")
+    game = described_class.new(**fields, state: "final", ended_in: "overtime",
+      codes: {"state" => "OFF", :game_type => 2, :ended_in => "OT"})
 
     expect(described_class.from_h(JSON.parse(game.to_json))).to eq(game)
   end
@@ -35,7 +36,18 @@ RSpec.describe SportsIngest::NHL::Game do
     expect(game.involves?("10")).to be(false)
   end
 
+  it "maps NHL codes, with a fallback for unknown ones" do
+    expect(described_class.from_code(:state, "CRIT")).to eq(:live)
+    expect(described_class.from_code(:state, "WARP")).to eq(:unknown)
+    expect(described_class.from_code(:game_type, 9)).to eq(:other)
+    expect(described_class.from_code(:ended_in, nil)).to be_nil
+    expect(described_class.known_code?(:schedule_state, "PPD")).to be(true)
+    expect(described_class.new(**fields, state: :unknown, game_type: :other)).to have_attributes(state: :unknown)
+  end
+
   it "rejects values outside the allowed sets" do
+    expect { described_class.new(**fields, codes: {clock: "12:00"}) }.to raise_error(ArgumentError, /no field/)
+    expect { described_class.new(**fields, codes: {state: nil}) }.to raise_error(ArgumentError, /String or Integer/)
     expect { described_class.new(**fields, state: :paused) }.to raise_error(ArgumentError, /state must be one of/)
     expect { described_class.new(**fields, game_type: 2) }.to raise_error(ArgumentError, /game_type/)
     expect { described_class.new(**fields, season: "2026") }.to raise_error(ArgumentError, /season/)

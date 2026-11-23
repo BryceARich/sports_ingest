@@ -81,7 +81,8 @@ seconds at most while live.
 - **Scores and outcomes appear once a game starts.** `homeTeam.score` / `awayTeam.score` are
   absent before then; `gameOutcome.lastPeriodType` (`REG`, `OT`, `SO`) is there once it's final.
   `gameState` runs `FUT`, `PRE`, `LIVE` (`CRIT` late in close games), `FINAL`, then `OFF` when
-  stats are official.
+  stats are official. The gem reads codes it doesn't know as `:unknown` (`:other` for
+  `gameType`) and warns, rather than failing (ADR 0017).
 - **2026-27 has 84 regular-season games per team** (82 before), plus preseason games, some
   split-squad (`homeSplitSquad`), in the club schedule.
 - **Unknown IDs return `404`** (e.g. `/player/1/landing`); map that to `SportsIngest::NotFound`.

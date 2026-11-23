@@ -13,6 +13,10 @@ module SportsIngest
     #
     # Dates are game dates, local to the venue. Games come back sorted by start time.
     #
+    # A missing field raises {SourceChangedError}. A code the gem doesn't know (a new
+    # +gameState+, say) doesn't: the game gets +:unknown+ or +:other+ and its raw code in
+    # {Game#codes}, and the first time each such code turns up, a warning goes to +$stderr+.
+    #
     # @example
     #   schedule = SportsIngest::NHL::Schedule.new
     #   schedule.on("2026-11-23").map { |g| "#{g.away_team.tri_code} @ #{g.home_team.tri_code}" }
@@ -21,6 +25,9 @@ module SportsIngest
     class Schedule
       # The first NHL season, by start year.
       FIRST_SEASON = 1917
+
+      # Unknown codes already warned about, as +[field, code]+ pairs.
+      WARNED = Set.new
 
       # @param client [Client, nil] what the NHL is read through; +nil+ means a new {Client}
       def initialize(client: nil)
@@ -157,23 +164,38 @@ module SportsIngest
       end
 
       def build(game, date)
-        Game.new(
+        codes = {game_type: game.fetch("gameType"), state: game.fetch("gameState"),
+                 schedule_state: game.fetch("gameScheduleState"),
+                 ended_in: game.dig("gameOutcome", "lastPeriodType")}.compact
+        built = Game.new(
           id: game.fetch("id"),
           season: Integer(game.fetch("season").to_s[0, 4]),
-          game_type: Game::GAME_TYPES.fetch(game.fetch("gameType")),
           date: date,
           start_time: game.fetch("startTimeUTC"),
-          state: Game::STATES.fetch(game.fetch("gameState")),
-          schedule_state: Game::SCHEDULE_STATES.fetch(game.fetch("gameScheduleState")),
-          ended_in: game.dig("gameOutcome", "lastPeriodType")&.then { |type| Game::PERIOD_TYPES.fetch(type) },
           venue: game.dig("venue", "default"),
           neutral_site: game.fetch("neutralSite", false),
           home_team: side(game.fetch("homeTeam")),
-          away_team: side(game.fetch("awayTeam"))
+          away_team: side(game.fetch("awayTeam")),
+          codes: codes,
+          **codes.to_h { |field, code| [field, Game.from_code(field, code)] }
         )
+        codes.each { |field, code| warn_unknown(field, code, built.id) }
+        built
       rescue ArgumentError => e
         raise SourceChangedError.new("NHL game #{game["id"].inspect} isn't shaped as expected: #{e.message}",
           source: Client::SOURCE)
+      end
+
+      # Warns once per process for each field and code the gem doesn't know.
+      def warn_unknown(field, code, game_id)
+        return if Game.known_code?(field, code)
+
+        key = [field, code]
+        return if WARNED.include?(key)
+
+        WARNED << key
+        Kernel.warn("sports_ingest: NHL game #{game_id} has an unknown #{field} code #{code.inspect}; " \
+          "it reads as #{Game.from_code(field, code).inspect} (see Game#codes)")
       end
 
       def side(team)
