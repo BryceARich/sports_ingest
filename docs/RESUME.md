@@ -76,14 +76,12 @@ untracked `.env`). Never put them in a committed file. Other settings (`SPORTS_I
 | One spec file | `bundle exec rspec spec/path/to_spec.rb` |
 | Lint / autofix | `bundle exec rubocop` / `bundle exec rubocop -a` |
 | API docs | `bundle exec yard doc`, then open `doc/index.html` |
-| Doc coverage | `bundle exec yard stats --list-undoc` |
-| Re-record fixtures (hits live APIs) | `bundle exec rake fixtures:record` |
+| Doc coverage (CI fails below 90%) | `bundle exec rake yard:coverage` |
+| Re-record fixtures (hits live APIs) | `bundle exec rake fixtures:record` (all `vcr:` specs) or `rake 'fixtures:record[spec/path]'` |
 | Check for licensed data | `script/licensed-data-guard --all` (the hook checks staged files) |
 | Console | `bin/console` |
 | Check changelog fragments and ADR index | `bundle exec rake changelog:check adr:check` |
 | Prepare a release (changelog + ADR index) | `bundle exec rake release:prepare[x.y.z]` |
-
-Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only work once those land.
 
 ## Where things live
 
@@ -95,12 +93,12 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 | `docs/RESUME.md` | This file |
 | `docs/ARCHITECTURE.md` | Data-flow diagram, module map, how to add a source |
 | `docs/adr/` | Architecture decision records; index and template in `docs/adr/README.md` |
-| `docs/sources/<source>.md` | Per-source notes: endpoints, auth, limits, quirks, terms (M1-12) |
+| `docs/sources/<source>.md` | Per-source notes: endpoints, auth, limits, quirks, terms, last verified; index in `docs/sources/README.md` |
 | `CHANGELOG.md` | Keep a Changelog, newest at top; only changes at release |
 | `changelog.d/` | One changelog fragment per PR (`<issue>.md`), compiled into `CHANGELOG.md` at release |
 | `rakelib/` | Repo rake tasks (changelog, ADR index); not part of the gem |
 | `lib/sports_ingest/` | Gem code, one folder per source (M1) |
-| `spec/` | RSpec specs and recorded fixtures (M1) |
+| `spec/` | RSpec specs; VCR cassettes in `spec/fixtures/cassettes/<source>/`, recording setup in `spec/support/fixture_recording.rb` |
 | Caches | `$XDG_CACHE_HOME/sports_ingest` or `~/.cache/sports_ingest`; override with `SPORTS_INGEST_CACHE_DIR` (M1-04) |
 | Data | **Outside the repo** by default; `/data/` and `/exports/` are gitignored (M1-11) |
 | `script/licensed-data-guard`, `.githooks/` | Licensed-data guard and the pre-commit hook that runs it (ADR 0014) |
@@ -125,10 +123,15 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 - **ESPN cookies expire.** If ESPN calls start failing with auth errors, copy fresh `espn_s2` and
   `SWID` values from a logged-in browser.
 - **NHL APIs are undocumented** and change between seasons. Re-record fixtures and update
-  `docs/sources/nhl.md` with the date you verified them.
+  `docs/sources/nhl.md` with the date you verified them. Each adapter issue adds the endpoints it
+  uses to its source note (`docs/sources/README.md`).
 - **Parallel PRs:** don't edit `CHANGELOG.md` or the ADR index table, and don't take "the next
   free" ADR number. Add `changelog.d/<issue>.md` and name ADRs after the issue (ADR 0072).
   "Unreleased" in `CHANGELOG.md` looks stale between releases; `rake changelog:preview` shows
   what's pending.
 - **Specs must stay offline.** If a spec needs the network, the fixture is missing; record it,
-  don't allow the request.
+  don't allow the request. Cassettes replay only (record mode `none`) unless
+  `SPORTS_INGEST_RECORD` is set, and never in CI. Read the cassette diff before committing: cookies
+  and the configured ESPN values are scrubbed, but a source could echo something else (ADR 0013).
+- **`certificate verify failed` when recording.** A mise Ruby built against Homebrew's `openssl@4`
+  looks for a CA bundle that doesn't exist. Run with `SSL_CERT_FILE=/etc/ssl/cert.pem` (macOS).

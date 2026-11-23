@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 require "sports_ingest"
+require "webmock/rspec" # no spec may reach the network
+
+Dir[File.join(__dir__, "support", "**", "*.rb")].sort.each { |file| require file }
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|

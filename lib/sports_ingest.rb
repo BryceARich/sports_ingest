@@ -27,7 +27,7 @@ module SportsIngest
   end
 
   @loader = Zeitwerk::Loader.for_gem
-  @loader.inflector.inflect("http_error" => "HTTPError")
+  @loader.inflector.inflect("http_error" => "HTTPError", "http" => "HTTP")
   SOURCES.each { |source| @loader.ignore("#{__dir__}/sports_ingest/#{source}{.rb,}") }
   @loader.setup
 

@@ -1,0 +1,62 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=seasonId=20252026%20and%20gameTypeId=2&limit=1
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip
+      Accept:
+      - "*/*"
+      User-Agent:
+      - sports_ingest/0.1.0 (+https://github.com/BryceARich/sports_ingest)
+      Host:
+      - api.nhle.com
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '476'
+      Connection:
+      - keep-alive
+      Vary:
+      - Accept-Encoding
+      - Origin
+      Content-Security-Policy:
+      - default-src 'none'; frame-ancestors 'none'
+      Strict-Transport-Security:
+      - max-age=157680000; includeSubDomains
+      - max-age=31622400
+      X-Content-Type-Options:
+      - nosniff
+      Referrer-Policy:
+      - no-referrer,strict-origin-when-cross-origin
+      Permissions-Policy:
+      - attribution-reporting=(), hid=(), window-management=(), document-domain=(),
+        usb=(), xr-spatial-tracking=(), midi=(), compute-pressure=(), display-capture=(),
+        accelerometer=(), payment=(), camera=(), microphone=(), magnetometer=(), autoplay=(),
+        gyroscope=(), idle-detection=(), screen-wake-lock=(), ambient-light-sensor=(),
+        otp-credentials=(), publickey-credentials-create=(), speaker-selection=(),
+        bluetooth=(), fullscreen=(), serial=(), gamepad=(), local-fonts=(), picture-in-picture=(),
+        identity-credentials-get=(), encrypted-media=(), web-share=(), geolocation=()
+      Cache-Control:
+      - no-transform, max-age=60, s-maxage=300, stale-while-revalidate=60, stale-if-error=600
+      Accept-Ranges:
+      - bytes
+      Server:
+      - cloudflare
+    body:
+      encoding: ASCII-8BIT
+      string: '{"data":[{"assists":6,"evGoals":1,"evPoints":7,"faceoffWinPct":null,"gameWinningGoals":0,"gamesPlayed":26,"goals":1,"lastName":"Chisholm","otGoals":0,"penaltyMinutes":4,"playerId":8480990,"plusMinus":3,"points":7,"pointsPerGame":0.26923,"positionCode":"D","ppGoals":0,"ppPoints":0,"seasonId":20252026,"shGoals":0,"shPoints":0,"shootingPct":0.05000,"shootsCatches":"L","shots":20,"skaterFullName":"Declan
+        Chisholm","teamAbbrevs":"WSH","timeOnIcePerGame":823.5384}],"total":940}'
+    adapter_metadata:
+      vcr_decompressed: gzip
+  recorded_at: Mon, 23 Nov 2026 04:52:55 GMT
+recorded_with: VCR 6.4.1

@@ -57,6 +57,9 @@ RSpec.describe LicensedDataGuard do
         @repo = dir
         git(dir, "init", "-q")
         git(dir, "config", "core.hooksPath", File.join(root, ".githooks"))
+        # A commit can start background maintenance, which races with removing the temp dir.
+        git(dir, "config", "maintenance.auto", "false")
+        git(dir, "config", "gc.auto", "0")
         example.run
       end
     end
