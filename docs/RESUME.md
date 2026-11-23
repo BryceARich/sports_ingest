@@ -66,7 +66,7 @@ the pre-commit hook that blocks licensed data (`git config core.hooksPath .githo
 Optional, only for ESPN private leagues (M4): copy your `espn_s2` and `SWID` cookies into
 `SPORTS_INGEST_ESPN_S2` and `SPORTS_INGEST_ESPN_SWID` (for example in your shell profile, or an
 untracked `.env`). Never put them in a committed file. Other settings (`SPORTS_INGEST_CACHE_DIR`,
-`SPORTS_INGEST_TTL_<SOURCE>`, ...) are listed in `SportsIngest::Configuration` and ADR 0010.
+`SPORTS_INGEST_TTL_<SOURCE>`, `SPORTS_INGEST_PROCESSED_CACHE`, ...) are listed in `SportsIngest::Configuration` and ADR 0010.
 
 ## How to run everything
 

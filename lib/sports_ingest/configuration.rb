@@ -13,6 +13,7 @@ module SportsIngest
   # | {#cache_dir} | +SPORTS_INGEST_CACHE_DIR+ | +$XDG_CACHE_HOME/sports_ingest+, else +~/.cache/sports_ingest+ |
   # | {#user_agent} | +SPORTS_INGEST_USER_AGENT+ | +sports_ingest/<version> (+<homepage>)+ |
   # | {#raw_cache} | +SPORTS_INGEST_RAW_CACHE+ (+disk+, +memory+ or +off+) | +:disk+ |
+  # | {#processed_cache} | +SPORTS_INGEST_PROCESSED_CACHE+ (+disk+, +memory+ or +off+) | +:disk+ |
   # | {#default_ttl} | +SPORTS_INGEST_TTL+ | 3600 seconds |
   # | {#ttl_for}(source) | +SPORTS_INGEST_TTL_<SOURCE>+, e.g. +SPORTS_INGEST_TTL_NHL+ | {DEFAULT_TTLS} |
   # | {#espn_s2} | +SPORTS_INGEST_ESPN_S2+ | none |
@@ -53,6 +54,10 @@ module SportsIngest
     #   +:memory+ (for the life of the process) or +:off+
     attr_reader :raw_cache
 
+    # @return [Symbol] where the processed cache keeps model collections: +:disk+ (under
+    #   {#cache_dir}), +:memory+ (for the life of the process) or +:off+
+    attr_reader :processed_cache
+
     # @return [String] +User-Agent+ header sent with every HTTP request
     attr_reader :user_agent
 
@@ -77,6 +82,7 @@ module SportsIngest
       self.user_agent = "sports_ingest/#{VERSION} (+https://github.com/BryceARich/sports_ingest)"
       self.default_ttl = DEFAULT_TTL
       self.raw_cache = :disk
+      self.processed_cache = :disk
       @espn_s2 = nil
       @espn_swid = nil
       load_env(env)
@@ -110,12 +116,16 @@ module SportsIngest
     # @example
     #   config.raw_cache = :memory # nothing written to disk, e.g. in a short-lived script
     def raw_cache=(mode)
-      value = mode.to_s.strip.downcase.to_sym if mode.is_a?(Symbol) || mode.is_a?(String)
-      unless Cache::MODES.include?(value)
-        raise ConfigurationError, "raw_cache must be one of #{Cache::MODES.join(", ")}, got #{mode.inspect}"
-      end
+      @raw_cache = coerce_cache_mode(mode, "raw_cache")
+    end
 
-      @raw_cache = value
+    # @param mode [Symbol, String] +:disk+, +:memory+ or +:off+
+    # @return [void]
+    # @raise [ConfigurationError] for any other value
+    # @example
+    #   config.processed_cache = :off # always rebuild, never read old results
+    def processed_cache=(mode)
+      @processed_cache = coerce_cache_mode(mode, "processed_cache")
     end
 
     # @param seconds [Integer, String] TTL for sources with no TTL of their own
@@ -197,6 +207,7 @@ module SportsIngest
         cache_dir: cache_dir.to_s,
         user_agent: user_agent,
         raw_cache: raw_cache,
+        processed_cache: processed_cache,
         default_ttl: default_ttl,
         ttls: ttls,
         espn_s2: espn_s2&.to_s,
@@ -237,6 +248,7 @@ module SportsIngest
       read.call("CACHE_DIR")&.then { |v| self.cache_dir = v }
       read.call("USER_AGENT")&.then { |v| self.user_agent = v }
       read.call("RAW_CACHE")&.then { |v| self.raw_cache = v }
+      read.call("PROCESSED_CACHE")&.then { |v| self.processed_cache = v }
       read.call("TTL")&.then { |v| self.default_ttl = v }
       read.call("ESPN_S2")&.then { |v| self.espn_s2 = v }
       read.call("ESPN_SWID")&.then { |v| self.espn_swid = v }
@@ -253,6 +265,13 @@ module SportsIngest
     def env_value(env, name, prefixed: true)
       value = env[prefixed ? "#{ENV_PREFIX}#{name}" : name]
       (value.nil? || value.strip.empty?) ? nil : value
+    end
+
+    def coerce_cache_mode(mode, name)
+      value = mode.to_s.strip.downcase.to_sym if mode.is_a?(Symbol) || mode.is_a?(String)
+      return value if Cache::MODES.include?(value)
+
+      raise ConfigurationError, "#{name} must be one of #{Cache::MODES.join(", ")}, got #{mode.inspect}"
     end
 
     def coerce_ttl(seconds, name)

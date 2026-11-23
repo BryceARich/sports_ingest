@@ -17,6 +17,16 @@ RSpec.describe SportsIngest::Cache::DiskStore do
     expect(File.read(File.join(dir, "nhl/ab/abc.json"))).to eq('{"status":200}')
   end
 
+  it "reads non-ASCII text back whatever the locale (LANG unset in cron, say)" do
+    original = Encoding.default_external
+    Encoding.default_external = Encoding::US_ASCII
+    store.write("nhl/abc", {"name" => "Stützle"})
+
+    expect(store.read("nhl/abc")).to eq({"name" => "Stützle"})
+  ensure
+    Encoding.default_external = original
+  end
+
   it "creates files readable by the owner only" do
     store.write("nhl/abc", {})
 

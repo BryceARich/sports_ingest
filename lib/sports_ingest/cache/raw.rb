@@ -41,12 +41,7 @@ module SportsIngest
       #   process-wide {MemoryStore}, or a {NullStore}
       # @raise [ConfigurationError] for an unknown mode
       def self.store_for(mode, configuration = SportsIngest.configuration)
-        case mode
-        when :disk then DiskStore.new(configuration.cache_dir.join("raw"))
-        when :memory then @memory_store ||= MemoryStore.new
-        when :off then NullStore.new
-        else raise ConfigurationError, "unknown raw cache mode #{mode.inspect}; use one of #{MODES.join(", ")}"
-        end
+        Cache.store_for(mode, tier: :raw, configuration: configuration)
       end
 
       # @return [HTTP::Client, #get] the client requests go through
