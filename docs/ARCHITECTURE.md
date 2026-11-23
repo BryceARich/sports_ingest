@@ -86,7 +86,7 @@ Planned layout under `lib/` (Zeitwerk autoloading, one constant per file, paths 
 | `lib/sports_ingest/configuration.rb` | `SportsIngest::Configuration` (+ `Configurable`, `Secret`) | core | M1-04 |
 | `lib/sports_ingest/http/` | `SportsIngest::HTTP::*` | core | M1-05 |
 | `lib/sports_ingest/cache/` | `SportsIngest::Cache::*` (raw and processed tiers) | core | M1-06, M1-07 |
-| `lib/sports_ingest/model.rb` | `SportsIngest::Model` (base) | core | M1-08 |
+| `lib/sports_ingest/model.rb` + `model/` | `SportsIngest::Model` (base, on `Data`, [ADR 0011](adr/0011-models-on-ruby-data.md)) | core | M1-08 |
 | `lib/sports_ingest/error.rb`, `*_error.rb` | `SportsIngest::Error` and subclasses, one per file | core | M1-04 (base), M1-09 |
 | `lib/sports_ingest/identity/` | `PlayerRef`, normalizer, matcher, crosswalk | core | M3 |
 | `lib/sports_ingest/nhl.rb` + `nhl/` | `SportsIngest::NHL` | `require "sports_ingest/nhl"` | M2 |
