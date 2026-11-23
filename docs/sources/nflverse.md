@@ -37,7 +37,14 @@ so prefer the direct download URL and `timestamp.json` over listing.
 ## Known quirks
 
 - **Check `timestamp.json` before downloading** a season file; it's tiny and says whether the
-  cached copy is stale (M5-01).
+  cached copy is stale. `Nflverse::ReleaseDownloader` (M5-01) does this: the timestamp goes through
+  the raw cache (so it's checked once per TTL), the asset is saved to
+  `<cache_dir>/releases/nflverse/<tag>/<file>` with a `<file>.meta.json` recording the
+  `last_updated` it matches, and it's downloaded again only when that value changes
+  ([ADR 0040](../adr/0040-nflverse-release-files-on-disk.md)).
+- **`last_updated` is compared as a string**, never parsed: it's US Eastern time with an `EST`
+  suffix, and we only need to know whether it changed. Checked 2026-11-23 for `stats_player` and
+  `players`.
 - **`player_stats` is the old tag.** Its `timestamp.json` stopped at 2025-05-07; current player
   stats are under `stats_player`. Don't read `player_stats`.
 - **Season files appear as the season goes**: `stats_player_week_2026.csv` exists during the 2026
