@@ -6,6 +6,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `/spawn-unblocked` now starts Claude desktop app sessions, each in its own worktree with Remote
+  Control on, instead of wrapping `script/claude/spawn-unblocked`. The script stays for headless
+  runs from a terminal and now says it needs the `claude` CLI logged in.
+
 ### Added
 
 - GitHub Actions CI (`.github/workflows/ci.yml`): specs and RuboCop on macOS (Intel) and Ubuntu

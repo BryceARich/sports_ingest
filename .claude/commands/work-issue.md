@@ -67,5 +67,6 @@ behavior or structure changed, an ADR for real alternatives, and a `CHANGELOG.md
    `gh api repos/{owner}/{repo}/issues/$ARGUMENTS/dependencies/blocking --jq '.[] | "#\(.number) \(.title)"'`
 2. Only if you learned something a dependent needs that isn't obvious from the code or docs,
    comment on it (as that account) with a note starting `Handoff from #$ARGUMENTS:`. Keep it to a few lines.
-3. Finish with the PR link, the dependents, and: "After merging, run
-   `script/claude/spawn-unblocked` to start sessions for the ones it unblocks."
+3. Finish with the PR link, the dependents, and: "After merging, run `/spawn-unblocked` in the
+   desktop app (or `script/claude/spawn-unblocked` in a terminal for headless runs) to start
+   sessions for the ones it unblocks."

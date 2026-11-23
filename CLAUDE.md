@@ -119,10 +119,13 @@ Two slash commands in `.claude/commands/` script this:
 
 - **`/work-issue <N>`** runs steps 1–3 for one issue, then leaves handoff notes on the issues it
   unblocks. Use one issue per session.
-- **`/spawn-unblocked [max] [--dry-run]`** is a thin wrapper around `script/claude/spawn-unblocked`.
-  Running the script straight from a terminal after merging a PR costs no tokens. It finds issues
-  whose blockers have all closed and starts a fresh headless session for each one in its own
-  worktree (`../sports_ingest-worktrees/<branch>`), working as the bot. It starts at most 3 by default.
+- **`/spawn-unblocked [max] [--dry-run]`**, run in the Claude desktop app, finds issues whose
+  blockers have all closed (`script/claude/ready-issues`) and starts an app session for each one in
+  its own worktree, with Remote Control on so the maintainer can follow it from their phone. Each
+  session works as the bot. It starts at most 3 by default.
+- **`script/claude/spawn-unblocked [max] [--dry-run]`**, run from a terminal, does the same with
+  headless `claude -p` sessions in `../sports_ingest-worktrees/<branch>`. They don't show in the
+  app; check their logs instead. It needs the `claude` CLI installed and logged in.
 
 The repo is public, so both only trust people with a role on the repo (owner, org member or
 collaborator): the scripts skip issues anyone else opened, and `/work-issue` reads only those
