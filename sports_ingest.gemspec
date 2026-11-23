@@ -28,5 +28,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Core stays free of native extensions so it installs cleanly on a Raspberry Pi.
+  # csv is a bundled gem from Ruby 3.4 on, so it has to be listed; it is pure Ruby (ADR 0047).
+  spec.add_dependency "csv", "~> 3.3"
   spec.add_dependency "zeitwerk", "~> 2.6"
 end

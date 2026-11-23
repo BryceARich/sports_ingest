@@ -93,6 +93,7 @@ Planned layout under `lib/` (Zeitwerk autoloading, one constant per file, paths 
 | `lib/sports_ingest/espn.rb` + `espn/` | `SportsIngest::ESPN` | `require "sports_ingest/espn"` | M4 |
 | `lib/sports_ingest/nflverse.rb` + `nflverse/` | `SportsIngest::Nflverse` | `require "sports_ingest/nflverse"` | M5 |
 | `lib/sports_ingest/advanced_hockey.rb` + `advanced_hockey/` | `SportsIngest::AdvancedHockey` | `require "sports_ingest/advanced_hockey"` | M6 |
+| `lib/sports_ingest/advanced_hockey/puck_pedia.rb` + `puck_pedia/` | `AdvancedHockey::PuckPedia` (contract import, one parser per export layout, [ADR 0047](adr/0047-versioned-puckpedia-contract-parsers.md)) and `AdvancedHockey::Contract` | `require "sports_ingest/advanced_hockey"` | M6-04 |
 | `lib/sports_ingest/snapshot/` | snapshot export and offline mode | core | M7 |
 | `spec/` | RSpec specs, VCR/WebMock fixtures | — | M1 |
 | `docs/sources/<source>.md` | per-source endpoints, auth, limits, quirks, terms, last verified ([index](sources/README.md)) | — | M1-12 |
