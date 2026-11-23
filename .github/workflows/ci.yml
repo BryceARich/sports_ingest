@@ -20,6 +20,20 @@ env:
   LC_ALL: C.UTF-8
 
 jobs:
+  licensed-data:
+    name: Licensed-data guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # --range reads every commit in the PR, not only the final tree
+      - name: Tracked files
+        run: ruby script/licensed-data-guard --all
+      - name: Every commit in the PR
+        if: ${{ github.event_name == 'pull_request' }}
+        run: ruby script/licensed-data-guard --range "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+
   test:
     name: ${{ matrix.name }}
     strategy:

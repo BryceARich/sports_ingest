@@ -15,3 +15,8 @@
 .env
 .env.*
 /mise.local.toml
+
+# Local data folders, e.g. Evolving-Hockey / PuckPedia exports. Licensed data never enters git
+# (ADR 0005); keep exports outside the repo, and the pre-commit hook still checks other paths.
+/data/
+/exports/

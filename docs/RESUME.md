@@ -59,7 +59,8 @@ bundle exec rspec             # 3. tests: should be green, fully offline
 bundle exec rubocop           # 4. lint: should be clean
 ```
 
-`bin/setup` runs steps 1 and 2 for you, and adds the mise setting above if it's missing.
+`bin/setup` runs steps 1 and 2 for you, adds the mise setting above if it's missing, and turns on
+the pre-commit hook that blocks licensed data (`git config core.hooksPath .githooks`, ADR 0014).
 `mise current ruby` should print the version in `.ruby-version`.
 
 Optional, only for ESPN private leagues (M4): copy your `espn_s2` and `SWID` cookies into
@@ -77,6 +78,7 @@ untracked `.env`). Never put them in a committed file. Other settings (`SPORTS_I
 | API docs | `bundle exec yard doc`, then open `doc/index.html` |
 | Doc coverage | `bundle exec yard stats --list-undoc` |
 | Re-record fixtures (hits live APIs) | `bundle exec rake fixtures:record` |
+| Check for licensed data | `script/licensed-data-guard --all` (the hook checks staged files) |
 | Console | `bin/console` |
 | Check changelog fragments and ADR index | `bundle exec rake changelog:check adr:check` |
 | Prepare a release (changelog + ADR index) | `bundle exec rake release:prepare[x.y.z]` |
@@ -100,7 +102,8 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 | `lib/sports_ingest/` | Gem code, one folder per source (M1) |
 | `spec/` | RSpec specs and recorded fixtures (M1) |
 | Caches | `$XDG_CACHE_HOME/sports_ingest` or `~/.cache/sports_ingest`; override with `SPORTS_INGEST_CACHE_DIR` (M1-04) |
-| Data | **Outside the repo** by default; exact path set in M1-11 |
+| Data | **Outside the repo** by default; `/data/` and `/exports/` are gitignored (M1-11) |
+| `script/licensed-data-guard`, `.githooks/` | Licensed-data guard and the pre-commit hook that runs it (ADR 0014) |
 | EH / PuckPedia exports | A local folder you drop exports into, never inside the repo |
 
 ## Known gotchas
@@ -117,7 +120,8 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 - **The Pi is slow to build Ruby** and native gems. That's why core avoids native extensions:
   adding one means checking it installs on the Pi first.
 - **Licensed data:** EH and PuckPedia files must never be committed, including derived caches and
-  snapshots. Fixtures use invented values. See `CLAUDE.md`.
+  snapshots. Fixtures use invented values, in `spec/fixtures/advanced_hockey/`, the one folder the
+  guard allows. The pre-commit hook needs `bin/setup` once per clone; CI checks every PR. See `CLAUDE.md`.
 - **ESPN cookies expire.** If ESPN calls start failing with auth errors, copy fresh `espn_s2` and
   `SWID` values from a logged-in browser.
 - **NHL APIs are undocumented** and change between seasons. Re-record fixtures and update
