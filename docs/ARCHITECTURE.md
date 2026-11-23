@@ -69,7 +69,7 @@ What each layer does:
 | **Adapters** | One per source. Turn raw payloads or imported files into models. Raise only `SportsIngest::Error` subclasses (M1-09), and `SourceChangedError` when a payload's shape is unexpected. | Call `Net::HTTP` directly, or load another source's code. |
 | **Models** (M1-08) | Immutable value objects with `to_h` / `to_json` / `from_h` and a schema version. Players carry a `PlayerRef` with the canonical ID plus per-source IDs. | Do I/O. |
 | **Crosswalk** (M3) | Maps each source's player IDs to the canonical ID: normalizer, tiered matcher, manual overrides, persisted JSON map. | Re-run fuzzy matching for a player that is already resolved. |
-| **Processed cache** (M1-07) | Normalized and matched model collections saved as JSON with metadata. What consumers read. | Live inside the repo by default. |
+| **Processed cache** (M1-07) | `Cache::Processed`: model collections saved as JSON under a caller-chosen key, with source, `fetched_at`, model class and schema version. Reads miss when the model or its schema version changed; writes fail if a collection wouldn't read back unchanged ([ADR 0010](adr/0010-processed-cache-entries.md)). What consumers read. | Live inside the repo by default. |
 | **Consumers** | Other projects. They call the library, or read the processed cache. | Re-import raw sources themselves. |
 
 Snapshots (M7-01) package the processed cache so `SportsIngest.offline!(path)` (M7-02) can serve
@@ -85,7 +85,7 @@ Planned layout under `lib/` (Zeitwerk autoloading, one constant per file, paths 
 | `lib/sports_ingest/source_loader.rb` | `SportsIngest::SourceLoader` | core | M1-03 |
 | `lib/sports_ingest/configuration.rb` | `SportsIngest::Configuration` (+ `Configurable`, `Secret`) | core | M1-04 |
 | `lib/sports_ingest/http.rb` + `http/` | `SportsIngest::HTTP`: `Client`, `Response`, `Backoff`, `RateLimiter` ([ADR 0008](adr/0008-http-client-on-net-http.md)) | core | M1-05 |
-| `lib/sports_ingest/cache.rb` + `cache/` | `SportsIngest::Cache`: `Raw`, `MemoryStore`, `DiskStore`, `NullStore` (M1-06); processed tier (M1-07) | core | M1-06, M1-07 |
+| `lib/sports_ingest/cache.rb` + `cache/` | `SportsIngest::Cache`: `Raw`, `MemoryStore`, `DiskStore`, `NullStore` (M1-06); `Processed` (M1-07) | core | M1-06, M1-07 |
 | `lib/sports_ingest/model.rb` + `model/` | `SportsIngest::Model` (base, on `Data`, [ADR 0011](adr/0011-models-on-ruby-data.md)) | core | M1-08 |
 | `lib/sports_ingest/error.rb`, `*_error.rb`, `not_found.rb` | `SportsIngest::Error` and subclasses, one per file ([ADR 0012](adr/0012-error-hierarchy.md)) | core | M1-04 (base), M1-09 |
 | `lib/sports_ingest/identity/` | `SportsIngest::Identity::PlayerRef` ([ADR 0026](adr/0026-canonical-id-scheme.md)), later the normalizer, matcher, crosswalk | core | M3-01, M3 |
@@ -136,7 +136,8 @@ Loading rules (M1-03):
    ([ADR 0006](adr/0006-seasons-and-last-n-convention.md)).
 8. **Caching.** Wrap the source's client in `Cache::Raw` (`Cache::Raw.new(client: HTTP::Client.new(source: :x))`)
    so responses go through the raw cache; save the normalized,
-   matched result to the processed cache so consumers never re-import.
+   matched result with `Cache::Processed#write(key, models, source:, fetched_at:)`, keyed
+   `"<source>/..."`, so consumers read it with `#read(key, model:)` and never re-import.
 9. **Tests.** Record fixtures (VCR cassettes under `spec/fixtures/cassettes/<source>/`, re-recorded
    with `rake fixtures:record`, [ADR 0013](adr/0013-vcr-cassettes-for-fixtures.md)) so specs run offline. Licensed sources use the real
    column layout with invented values.

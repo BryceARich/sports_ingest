@@ -32,7 +32,7 @@ module SportsIngest
       # @return [Hash, nil] the entry, or +nil+ if there is none or its file is unreadable
       # @raise [ConfigurationError] if +key+ isn't a safe relative path
       def read(key)
-        JSON.parse(path_for(key).read)
+        JSON.parse(path_for(key).read(encoding: Encoding::UTF_8))
       rescue Errno::ENOENT, Errno::EISDIR, JSON::ParserError, EncodingError
         nil
       end

@@ -52,6 +52,7 @@ RSpec.describe SportsIngest::Configuration do
         "SPORTS_INGEST_USER_AGENT" => "test-agent/1.0",
         "SPORTS_INGEST_TTL" => "120",
         "SPORTS_INGEST_RAW_CACHE" => "Memory",
+        "SPORTS_INGEST_PROCESSED_CACHE" => "off",
         "SPORTS_INGEST_TTL_NHL" => "60",
         "SPORTS_INGEST_TTL_PUCKPEDIA" => "0",
         "SPORTS_INGEST_ESPN_S2" => s2,
@@ -65,6 +66,7 @@ RSpec.describe SportsIngest::Configuration do
       expect(config.user_agent).to eq("test-agent/1.0")
       expect(config.default_ttl).to eq(120)
       expect(config.raw_cache).to eq(:memory)
+      expect(config.processed_cache).to eq(:off)
       expect(config.ttl_for(:nhl)).to eq(60)
       expect(config.ttl_for(:puckpedia)).to eq(0)
       expect(config.ttl_for(:espn)).to eq(900)
@@ -114,6 +116,14 @@ RSpec.describe SportsIngest::Configuration do
       expect(config.raw_cache).to eq(:off)
       expect { config.raw_cache = :redis }.to raise_error(SportsIngest::ConfigurationError)
       expect { config.raw_cache = nil }.to raise_error(SportsIngest::ConfigurationError)
+    end
+
+    it "keeps the processed cache on disk by default and accepts memory or off" do
+      expect(described_class.new(env: {}).processed_cache).to eq(:disk)
+      config.processed_cache = :memory
+      expect(config.processed_cache).to eq(:memory)
+      expect(config.to_h[:processed_cache]).to eq(:memory)
+      expect { config.processed_cache = "redis" }.to raise_error(SportsIngest::ConfigurationError, /processed_cache/)
     end
 
     it "rejects a blank cache dir or user agent" do
