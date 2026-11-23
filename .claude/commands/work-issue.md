@@ -48,8 +48,15 @@ scripts handle this themselves.
 ## 4. Definition of Done
 
 Tick every item in the issue's checklist: tests, YARD, docs (README / RESUME / ARCHITECTURE) if
-behavior or structure changed, an ADR for real alternatives, and a `CHANGELOG.md` line under
-"Unreleased" ending with the build order, e.g. `(M1-01)`.
+behavior or structure changed, an ADR for real alternatives, and a changelog fragment.
+
+- **Changelog:** add `changelog.d/$ARGUMENTS.md` with Keep a Changelog sections (`### Added`, ...),
+  each entry ending with the build order, e.g. `(M1-01)`. See `changelog.d/README.md`. Never edit
+  `CHANGELOG.md` itself.
+- **ADR:** name it after the issue, `docs/adr/NNNN-slug.md` with `NNNN` = $ARGUMENTS padded to four
+  digits, and its first line `# NNNN. Title`. The number may match an older ADR; the slug keeps
+  them apart, so link to the file. Don't add a row to the index in `docs/adr/README.md`.
+- `bundle exec rake changelog:check adr:check` must pass.
 
 ## 5. Commit, push, open the PR
 

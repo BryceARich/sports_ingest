@@ -34,12 +34,22 @@ the full rules are in [`CLAUDE.md`](CLAUDE.md), and setup is in [`docs/RESUME.md
 - The PR template pre-fills the Definition of Done. Tick each item, or say why it doesn't apply
   (for example, a docs-only change has no tests or YARD comments).
 - Reference the issue with `Closes #N` so merging closes it.
-- Every change adds a line under "Unreleased" in [`CHANGELOG.md`](CHANGELOG.md), following
-  [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) (Added, Changed, Deprecated, Removed,
-  Fixed, Security).
-- A decision with real alternatives gets an ADR; see [`docs/adr/README.md`](docs/adr/README.md).
-- Once the gem skeleton exists (M1-01), `bundle exec rspec` and `bundle exec rubocop` must pass,
-  and specs must run offline.
+- Every change adds a changelog fragment, `changelog.d/<issue>.md`, with
+  [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) sections (Added, Changed, Deprecated,
+  Removed, Fixed, Security); see [`changelog.d/README.md`](changelog.d/README.md). Don't edit
+  [`CHANGELOG.md`](CHANGELOG.md): the fragments are compiled into it at release, so parallel PRs
+  don't conflict.
+- A decision with real alternatives gets an ADR named after the issue (`0072-slug.md` for #72);
+  see [`docs/adr/README.md`](docs/adr/README.md). The ADR index table is rewritten at release, so
+  PRs don't edit it.
+- `bundle exec rspec`, `bundle exec rubocop` and `bundle exec rake changelog:check adr:check`
+  must pass, and specs must run offline.
+
+## Releases
+
+1. Bump `SportsIngest::VERSION`.
+2. `bundle exec rake release:prepare` folds `changelog.d/` into a new `CHANGELOG.md` section
+   (and deletes the fragments), and rewrites the ADR index. Review and commit the result in a PR.
 
 ## How Claude Code is used here
 

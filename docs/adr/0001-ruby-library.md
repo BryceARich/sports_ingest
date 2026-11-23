@@ -1,4 +1,4 @@
-# 0001. Build sports_ingest as a Ruby library
+# 0001. Build `sports_ingest` as a Ruby library (gem)
 
 - **Status:** Accepted
 - **Date:** 2026-11-22

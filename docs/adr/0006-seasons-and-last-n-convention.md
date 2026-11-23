@@ -1,4 +1,4 @@
-# 0006. One time-range convention: seasons: or last: N
+# 0006. One time-range convention: `seasons:` or `last: N`
 
 - **Status:** Accepted
 - **Date:** 2026-11-22

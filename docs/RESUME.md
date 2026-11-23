@@ -78,6 +78,8 @@ untracked `.env`). Never put them in a committed file. Other settings (`SPORTS_I
 | Doc coverage | `bundle exec yard stats --list-undoc` |
 | Re-record fixtures (hits live APIs) | `bundle exec rake fixtures:record` |
 | Console | `bin/console` |
+| Check changelog fragments and ADR index | `bundle exec rake changelog:check adr:check` |
+| Prepare a release (changelog + ADR index) | `bundle exec rake release:prepare[x.y.z]` |
 
 Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only work once those land.
 
@@ -92,7 +94,9 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 | `docs/ARCHITECTURE.md` | Data-flow diagram, module map, how to add a source |
 | `docs/adr/` | Architecture decision records; index and template in `docs/adr/README.md` |
 | `docs/sources/<source>.md` | Per-source notes: endpoints, auth, limits, quirks, terms (M1-12) |
-| `CHANGELOG.md` | Keep a Changelog, newest at top |
+| `CHANGELOG.md` | Keep a Changelog, newest at top; only changes at release |
+| `changelog.d/` | One changelog fragment per PR (`<issue>.md`), compiled into `CHANGELOG.md` at release |
+| `rakelib/` | Repo rake tasks (changelog, ADR index); not part of the gem |
 | `lib/sports_ingest/` | Gem code, one folder per source (M1) |
 | `spec/` | RSpec specs and recorded fixtures (M1) |
 | Caches | `$XDG_CACHE_HOME/sports_ingest` or `~/.cache/sports_ingest`; override with `SPORTS_INGEST_CACHE_DIR` (M1-04) |
@@ -118,5 +122,9 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
   `SWID` values from a logged-in browser.
 - **NHL APIs are undocumented** and change between seasons. Re-record fixtures and update
   `docs/sources/nhl.md` with the date you verified them.
+- **Parallel PRs:** don't edit `CHANGELOG.md` or the ADR index table, and don't take "the next
+  free" ADR number. Add `changelog.d/<issue>.md` and name ADRs after the issue (ADR 0072).
+  "Unreleased" in `CHANGELOG.md` looks stale between releases; `rake changelog:preview` shows
+  what's pending.
 - **Specs must stay offline.** If a spec needs the network, the fixture is missing; record it,
   don't allow the request.
