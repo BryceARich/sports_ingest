@@ -8,7 +8,7 @@ require "open3"
 module ClaudeScripts
   PROJECT = "1" # project board number, under the repo owner
   UNSCHEDULED_MILESTONE = 8 # M8 "Later" is never started automatically
-  TITLE_RE = /\A\[M(\d+)-(\d+)\]\s*(.*)\z/.freeze
+  TITLE_RE = /\A\[M(\d+)-(\d+)\]\s*(.*)\z/
   # The repo is public, so anyone can open an issue or comment. Only text from people with a role
   # on the repo is acted on, so a stranger can't steer a session that holds a GitHub token.
   TRUSTED_ASSOCIATIONS = %w[OWNER MEMBER COLLABORATOR].freeze
@@ -63,15 +63,15 @@ module ClaudeScripts
   def bot_env
     return {} if bot.nil? || ENV["GH_TOKEN"]
 
-    @bot_env ||= { "GH_TOKEN" => run("gh", "auth", "token", "--user", bot).strip }
+    @bot_env ||= {"GH_TOKEN" => run("gh", "auth", "token", "--user", bot).strip}
   end
 
   # Env for git commits as the bot (empty when no bot is configured).
   def bot_git_env
     return {} unless bot
 
-    { "GIT_AUTHOR_NAME" => bot, "GIT_COMMITTER_NAME" => bot,
-      "GIT_AUTHOR_EMAIL" => bot_email, "GIT_COMMITTER_EMAIL" => bot_email }
+    {"GIT_AUTHOR_NAME" => bot, "GIT_COMMITTER_NAME" => bot,
+     "GIT_AUTHOR_EMAIL" => bot_email, "GIT_COMMITTER_EMAIL" => bot_email}
   end
 
   def trusted?(item)
@@ -193,7 +193,7 @@ module ClaudeScripts
         elsif File.exist?(File.join(worktree_root, branch)) then "worktree exists"
         end
 
-      (reason ? skipped : ready) << { issue: issue, branch: branch, reason: reason }
+      (reason ? skipped : ready) << {issue: issue, branch: branch, reason: reason}
     end
     [ready, skipped]
   end

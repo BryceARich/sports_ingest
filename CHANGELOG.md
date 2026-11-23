@@ -10,7 +10,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 - Gem skeleton: `sports_ingest.gemspec`, Bundler, Ruby 4.0.10 pinned in `.ruby-version` and installed
   with mise, Zeitwerk autoloading, RSpec, RuboCop with the Standard config, YARD options,
-  `bin/console`, a README with the project's goals, and ADR 0007 on the toolchain (M1-01).
+  `bin/console`, a README with the project's goals, and ADR 0007 on the toolchain. The
+  `script/claude/` helpers now pass RuboCop too (M1-01).
 - `.claude/commands/work-issue.md` and `.claude/commands/spawn-unblocked.md`: `/work-issue` takes
   one issue from Todo to a PR awaiting review, and `/spawn-unblocked` starts a fresh headless
   Claude session in its own worktree for each issue whose blockers have merged. The GitHub

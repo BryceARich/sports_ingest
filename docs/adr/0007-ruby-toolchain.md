@@ -20,7 +20,8 @@ installed and pinned, how files are loaded, and which lint rules apply.
 - **Loading.** We use **Zeitwerk** (`Zeitwerk::Loader.for_gem`): one constant per file, file
   paths match constant names. Zeitwerk is pure Ruby, so it adds no native extension to core.
 - **Lint.** We use **Standard Ruby**'s rules, run through RuboCop (`bundle exec rubocop`) by
-  requiring `standard` in `.rubocop.yml`, with no local overrides.
+  requiring `standard` in `.rubocop.yml`. Local overrides are rare and each carries a comment
+  saying why.
 
 ## Alternatives considered
 
