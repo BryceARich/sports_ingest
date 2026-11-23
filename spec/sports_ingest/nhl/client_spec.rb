@@ -19,6 +19,15 @@ RSpec.describe SportsIngest::NHL::Client do
     expect(nhl.get_json("/standings/2026-11-22")).to eq("standings" => [])
   end
 
+  it "answers to the rosters PR's names too" do
+    stub_request(:get, "https://api-web.nhle.com/v1/roster/TOR/20262027").to_return(status: 200, headers: json,
+      body: '{"forwards":[]}')
+
+    expect(nhl.web("roster/TOR/20262027")).to eq("forwards" => [])
+    expect(nhl.web_response("roster/TOR/20262027").status).to eq(200)
+    expect(described_class::WEB_URL).to eq(described_class::BASE_URL)
+  end
+
   it "fetches stats REST paths with query parameters" do
     stub_request(:get, "https://api.nhle.com/stats/rest/en/skater/summary")
       .with(query: {"limit" => "1", "cayenneExp" => "seasonId=20262027"})
