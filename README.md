@@ -29,7 +29,8 @@ projects (fantasy tools, dashboards, a future API) consume.
 | nflverse releases | `sports_ingest/nflverse` | GitHub release files |
 | Evolving-Hockey + PuckPedia | `sports_ingest/advanced_hockey` | licensed, manually exported files only |
 
-None of these are implemented yet; they arrive in milestones M2 to M6.
+They arrive in milestones M2 to M6. So far, the Evolving-Hockey skater GAR table can be imported
+(below).
 
 ## Usage
 
@@ -44,6 +45,23 @@ Each source loads on its own, with core but no other source:
 ```ruby
 require "sports_ingest/nhl" # SportsIngest::NHL, nothing from ESPN, nflverse or CSV
 ```
+
+### Evolving-Hockey skater GAR
+
+Export EH's skater GAR table (or save your spreadsheet tab, such as `GAR_25-26`) as CSV, in a
+folder **outside the repo**, then:
+
+```ruby
+require "sports_ingest/advanced_hockey"
+
+rows = SportsIngest::AdvancedHockey::SkaterGarImport.read("~/hockey/GAR_25-26.csv")
+rows.first.season # => 2025 (the 25-26 season, named by its start year)
+rows.first.teams  # => ["VAN", "MIN"] for a traded player's combined row
+rows.first.war    # => 2.7
+```
+
+Columns are matched by name (`EVO_GAR` or `EVO GAR`), so order and extra columns don't matter.
+A missing column raises `SportsIngest::SourceChangedError` listing the columns it found.
 
 ## Development
 
