@@ -1,0 +1,62 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://lm-api-reads.fantasy.espn.com/apis/v3/games/fhl/seasons/2027
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip
+      Accept:
+      - "*/*"
+      User-Agent:
+      - sports_ingest/0.1.0 (+https://github.com/BryceARich/sports_ingest)
+      Host:
+      - lm-api-reads.fantasy.espn.com
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - CloudFront
+      Content-Type:
+      - application/json;charset=utf-8
+      Transfer-Encoding:
+      - chunked
+      Connection:
+      - keep-alive
+      X-Fantasy-Server-Time:
+      - Mon, 23 Nov 2026 07:49:11 GMT
+      Access-Control-Allow-Origin:
+      - "*"
+      Access-Control-Allow-Methods:
+      - GET,PUT,POST,DELETE,OPTIONS,HEAD
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Expose-Headers:
+      - location,content-length,etag,if-none-match,X-Fantasy-Filter-Player-Count,X-Fantasy-Filter-Communication-Count,X-Fantasy-Filter-Schedule-Count,X-Fantasy-Filter-Transaction-Count,X-Fantasy-Role,X-Fantasy-Last-Update-League,X-Fantasy-Server-Time,X-Fantasy-Filter-TopicType-NOTE-Count,X-Fantasy-Filter-TopicType-POLL-Count,X-Fantasy-Filter-TopicType-MSG_BOARD-Count,X-Fantasy-Filter-TopicType-CHAT-Count,X-Fantasy-Filter-TopicType-EMAIL-Count,X-Fantasy-Filter-TopicType-OTHER-Count,X-Fantasy-Filter-TopicType-ACTIVITY_TRANSACTIONS-Count,X-Fantasy-Filter-TopicType-ACTIVITY_SETTINGS-Count,X-Fantasy-Filter-TopicType-ACTIVITY_STATUS-Count,X-Fantasy-Filter-TopicType-ACTIVITY_SCHEDULE-Count,X-Fantasy-Filter-TopicType-MSG_BOARD_GROUP-Count,X-Fantasy-Filter-TopicType-MSG_BOARD_MATCHUP-Count,X-Fantasy-Filter-TopicType-REMINDER_ACTIVATE-Count,X-Fantasy-Filter-TopicType-REMINDER_SCHEDULE-Count,X-Fantasy-Filter-TopicType-CHAT_ALL_MEMBERS-Count,X-Fantasy-Filter-TopicType-CHAT_DIRECT_MESSAGE-Count,Polling-Interval
+      X-Content-Type-Options:
+      - nosniff
+      X-Xss-Protection:
+      - '0'
+      X-Frame-Options:
+      - DENY
+      Cache-Control:
+      - max-age=300
+      Etag:
+      - W/"0d4c33bd43164b6d69276acc66f8178f5"
+      Vary:
+      - Origin,Accept-Encoding
+      X-Cache:
+      - RefreshHit from cloudfront
+    body:
+      encoding: ASCII-8BIT
+      string: '{"abbrev":"FHL 2027","active":true,"currentScoringPeriod":{"id":55},"display":true,"displayOrder":-1,"endDate":1846566000000,"gameId":4,"id":2027,"name":"Fantasy
+        Hockey 2027","startDate":1783407600000}'
+    adapter_metadata:
+      vcr_decompressed: gzip
+  recorded_at: Mon, 23 Nov 2026 07:49:10 GMT
+recorded_with: VCR 6.4.1

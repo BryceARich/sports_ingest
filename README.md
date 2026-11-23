@@ -77,6 +77,25 @@ use the season grouping for exact totals. Columns are matched by name (`EVO_GAR`
 a spreadsheet tab saved as CSV works too; a missing column raises
 `SportsIngest::SourceChangedError` listing the columns it found.
 
+### ESPN Fantasy
+
+Read-only. Public leagues need nothing; for a private league, set the `espn_s2` and `SWID` cookies
+from a logged-in browser in `SPORTS_INGEST_ESPN_S2` / `SPORTS_INGEST_ESPN_SWID` (or
+`SportsIngest.configure`). Without them, a private league raises `SportsIngest::AuthError`.
+
+```ruby
+require "sports_ingest/espn"
+
+espn = SportsIngest::ESPN::Client.new(game: :hockey) # or :football
+league = espn.league(12_345, season: 2027, views: %w[mSettings mTeam])
+league.dig("settings", "name")
+
+espn.get_json("seasons/2027/players", views: ["kona_player_info"],
+  filter: SportsIngest::ESPN::Filter.players(limit: 50, status: :free_agent, sort_percent_owned: true))
+```
+
+Hockey seasons are named by the year they end (2026-27 is `2027`), football by the year it starts.
+
 ## Development
 
 Ruby is pinned in `.ruby-version` and installed with [mise](https://mise.jdx.dev).
