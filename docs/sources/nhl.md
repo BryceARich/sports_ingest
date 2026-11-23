@@ -4,7 +4,8 @@
 - **Last verified:** 2026-11-22: every endpoint below returned 200 with the expected top-level
   keys, by hand with `curl`, during the 2026-27 regular season. The stats `skater/summary`
   call, `/standings/2026-11-22` and the stats `/team` list were also recorded as fixtures on
-  2026-11-22 (`spec/fixtures/cassettes/nhl/`).
+  2026-11-22 (`spec/fixtures/cassettes/nhl/`). `/schedule/2026-11-16`, `/schedule/2026-11-23` and
+  `/club-schedule-season/TOR/20262027` were recorded on 2026-11-23.
 - **Default raw-cache TTL:** 3600 seconds (`SPORTS_INGEST_TTL_NHL`); live-game calls will want far
   less (the polling helper, M2-10).
 
@@ -73,6 +74,16 @@ seconds at most while live.
 - **The stats `/team` list keeps old teams under current tri-codes.** `UTA` is both 59 (Utah
   Hockey Club) and 68 (Utah Mammoth, the current one). Take current IDs from game or schedule
   payloads (`homeTeam.id`), or from `SportsIngest::Teams`, not by tri-code from `/team`.
+- **Schedule weeks start on the date asked for.** `/schedule/{date}` returns seven days from
+  that date (`gameWeek`), and `nextStartDate` is the day after the last one. Games in a week have
+  no `gameDate`; the day's `date` is the game date, local to the venue (a late Pacific start falls
+  on the next day in `startTimeUTC`). Club schedules carry `gameDate` on each game.
+- **Scores and outcomes appear once a game starts.** `homeTeam.score` / `awayTeam.score` are
+  absent before then; `gameOutcome.lastPeriodType` (`REG`, `OT`, `SO`) is there once it's final.
+  `gameState` runs `FUT`, `PRE`, `LIVE` (`CRIT` late in close games), `FINAL`, then `OFF` when
+  stats are official.
+- **2026-27 has 84 regular-season games per team** (82 before), plus preseason games, some
+  split-squad (`homeSplitSquad`), in the club schedule.
 - **Unknown IDs return `404`** (e.g. `/player/1/landing`); map that to `SportsIngest::NotFound`.
 - **Shapes change between seasons** without notice. Re-record fixtures at the start of each
   season and update the date above.

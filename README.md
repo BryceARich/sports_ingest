@@ -55,6 +55,21 @@ team.division                              # => "Atlantic"
 SportsIngest::Teams.find("UTAH", source: :espn).name # => "Utah Mammoth"
 ```
 
+### NHL schedule
+
+```ruby
+require "sports_ingest/nhl"
+
+games = SportsIngest::NHL.schedule(date: "2026-11-23")
+game = games.first
+"#{game.away_team.tri_code} @ #{game.home_team.tri_code}" # => "CBJ @ NJD"
+game.start_time     # => 2026-11-24 00:00:00 UTC; game.date is the local date, 2026-11-23
+game.state          # => :scheduled, then :pregame, :live, :final
+
+SportsIngest::NHL.schedule(from: "2026-11-23", to: "2026-11-30", team: "TOR") # a range, one team
+SportsIngest::NHL.schedule(team: "TOR", season: 2026) # 2026-27, preseason and playoffs included
+```
+
 ### Evolving-Hockey skater GAR
 
 Download EH's skater GAR table as CSV (`EH_gar_sk_stats_regular_<date>.csv`) into a folder
