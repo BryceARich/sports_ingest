@@ -2,7 +2,8 @@
 
 - **Module:** `sports_ingest/nhl` (M2)
 - **Last verified:** 2026-11-22: every endpoint below returned 200 with the expected top-level
-  keys, by hand with `curl`, during the 2026-27 regular season. No fixtures recorded yet (M1-10).
+  keys, by hand with `curl`, during the 2026-27 regular season. The stats `skater/summary`
+  call was also recorded as a fixture on 2026-11-22 (`spec/fixtures/cassettes/nhl/`).
 - **Default raw-cache TTL:** 3600 seconds (`SPORTS_INGEST_TTL_NHL`); live-game calls will want far
   less (the polling helper, M2-10).
 

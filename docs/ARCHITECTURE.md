@@ -137,7 +137,8 @@ Loading rules (M1-03):
 8. **Caching.** Wrap the source's client in `Cache::Raw` (`Cache::Raw.new(client: HTTP::Client.new(source: :x))`)
    so responses go through the raw cache; save the normalized,
    matched result to the processed cache so consumers never re-import.
-9. **Tests.** Record fixtures (VCR/WebMock) so specs run offline. Licensed sources use the real
+9. **Tests.** Record fixtures (VCR cassettes under `spec/fixtures/cassettes/<source>/`, re-recorded
+   with `rake fixtures:record`, [ADR 0013](adr/0013-vcr-cassettes-for-fixtures.md)) so specs run offline. Licensed sources use the real
    column layout with invented values.
 10. **Docs.** YARD on every public method (CI fails below 90% coverage, `rake yard:coverage`), a
     row in this file's module map and data-flow diagram, the table in `CLAUDE.md`, and a changelog
