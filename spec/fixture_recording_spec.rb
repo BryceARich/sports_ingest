@@ -65,6 +65,44 @@ RSpec.describe FixtureRecording do
     end
   end
 
+  describe ".textify" do
+    def interaction_with(body, headers = {})
+      request = VCR::Request.new(:get, "https://api.nhle.com/stats/rest/en/team", "", {})
+      response = VCR::Response.new(VCR::ResponseStatus.new(200, "OK"), headers, body)
+      VCR::HTTPInteraction.new(request, response).hook_aware
+    end
+
+    it "marks a binary body that is valid UTF-8 as UTF-8, so YAML stores it as text" do
+      interaction = interaction_with("name=Montréal".b)
+      described_class.textify(interaction)
+
+      expect(interaction.response.body.encoding).to eq(Encoding::UTF_8)
+      expect(interaction.response.body).to eq("name=Montréal")
+    end
+
+    it "pretty-prints a JSON body without changing its data" do
+      interaction = interaction_with('{"data":[{"name":"Montréal"}]}'.b, {"Content-Type" => ["application/json"]})
+      described_class.textify(interaction)
+
+      expect(interaction.response.body.lines.size).to be > 1
+      expect(JSON.parse(interaction.response.body)).to eq("data" => [{"name" => "Montréal"}])
+    end
+
+    it "keeps a body that claims JSON but doesn't parse as it is" do
+      interaction = interaction_with("not json", {"Content-Type" => ["application/json"]})
+      described_class.textify(interaction)
+
+      expect(interaction.response.body).to eq("not json")
+    end
+
+    it "leaves bodies that aren't UTF-8 as binary" do
+      interaction = interaction_with("\x1F\x8B\xFF".b)
+      described_class.textify(interaction)
+
+      expect(interaction.response.body.encoding).to eq(Encoding::BINARY)
+    end
+  end
+
   describe "committed cassettes" do
     cassettes = Dir[File.join(FixtureRecording::CASSETTE_DIR, "**", "*.yml")]
 
@@ -75,6 +113,10 @@ RSpec.describe FixtureRecording do
     cassettes.each do |path|
       it "#{path.delete_prefix("#{FixtureRecording::CASSETTE_DIR}/")} has no cookies or secrets" do
         expect(described_class.leaks(File.read(path))).to be_empty
+      end
+
+      it "#{path.delete_prefix("#{FixtureRecording::CASSETTE_DIR}/")} stores bodies as text, not base64" do
+        expect(File.read(path)).not_to include("!binary")
       end
     end
   end

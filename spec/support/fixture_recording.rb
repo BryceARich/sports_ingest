@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "json"
 require "uri"
 require "vcr"
 
@@ -67,6 +68,37 @@ module FixtureRecording
     secrets.each { |value, placeholder| interaction.filter!(value, placeholder) }
   end
 
+  # Makes a response body readable in the cassette. A body that is valid UTF-8 is marked as
+  # UTF-8: Net::HTTP hands bodies over as binary (ASCII-8BIT), and YAML writes a binary string
+  # holding any non-ASCII byte (an accent in "Montréal") as base64, which hides it from diffs and
+  # from {.leaks}. A JSON body is also pretty-printed, so a re-record diffs field by field; the
+  # replayed body parses to the same data.
+  #
+  # @param interaction [VCR::HTTPInteraction::HookAware]
+  # @return [void]
+  def textify(interaction)
+    body = interaction.response.body
+    return unless body.is_a?(String)
+
+    text = body.dup.force_encoding(Encoding::UTF_8)
+    return unless text.valid_encoding?
+
+    headers = interaction.response.headers
+    interaction.response.body = json?(headers) ? pretty_json(text) : text
+    # The stored body may no longer be the size the server sent.
+    drop_headers(headers, %w[Content-Length]) if interaction.response.body.bytesize != body.bytesize
+  end
+
+  def json?(headers)
+    headers.any? { |name, values| name.casecmp?("Content-Type") && Array(values).join.include?("json") }
+  end
+
+  def pretty_json(text)
+    "#{JSON.pretty_generate(JSON.parse(text))}\n"
+  rescue JSON::ParserError
+    text
+  end
+
   # Text in a cassette that means scrubbing missed something.
   #
   # @param text [String] a cassette's YAML
@@ -97,5 +129,8 @@ VCR.configure do |config|
     decode_compressed_response: true,
     allow_unused_http_interactions: false
   }
-  config.before_record { |interaction| FixtureRecording.scrub(interaction) }
+  config.before_record do |interaction|
+    FixtureRecording.textify(interaction)
+    FixtureRecording.scrub(interaction)
+  end
 end
