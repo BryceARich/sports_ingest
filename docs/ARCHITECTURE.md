@@ -138,4 +138,4 @@ Loading rules (M1-03):
 9. **Tests.** Record fixtures (VCR/WebMock) so specs run offline. Licensed sources use the real
    column layout with invented values.
 10. **Docs.** YARD on every public method, a row in this file's module map and data-flow diagram,
-    the table in `CLAUDE.md`, and a CHANGELOG entry.
+    the table in `CLAUDE.md`, and a changelog fragment in `changelog.d/`.

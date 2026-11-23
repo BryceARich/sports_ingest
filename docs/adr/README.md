@@ -5,9 +5,16 @@ didn't, and what follows. See [`../ARCHITECTURE.md`](../ARCHITECTURE.md) for how
 
 ## Writing one
 
-1. Copy [`0000-template.md`](0000-template.md) to `NNNN-short-title.md`, using the next free number.
-2. Fill it in. Start with status **Proposed**; change it to **Accepted** when the PR merges.
-3. Add a row to the index below.
+1. Copy [`0000-template.md`](0000-template.md) to `NNNN-short-title.md`, where `NNNN` is the
+   issue number padded to four digits (`0072-…` for #72), not the next free number. ADRs
+   0001–0010 predate this and keep their names. If the number is already taken (by one of those,
+   or another ADR from the same issue), keep it: the slug keeps the files apart, so link to the
+   file. See [ADR 0072](0072-changelog-fragments-and-issue-numbered-adrs.md).
+2. Fill it in, keeping the first line as `# NNNN. Title`. Start with status **Proposed**; change
+   it to **Accepted** when the PR merges.
+3. Don't edit the index below. `rake adr:index` rewrites it from the files at release, so parallel
+   PRs don't conflict on it. `rake adr:check` (run in CI) fails if a row is wrong and lists ADRs
+   still waiting for a row.
 4. Never rewrite an accepted ADR's decision. To change course, write a new ADR and mark the old one
    **Superseded by [NNNN](NNNN-title.md)**.
 

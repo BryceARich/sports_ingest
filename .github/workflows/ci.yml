@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  merge_group: # ready if a merge queue is turned on (ADR 0072)
   workflow_dispatch:
 
 permissions:
@@ -42,3 +43,6 @@ jobs:
       - name: Lint
         if: ${{ !cancelled() }}  # report lint even when specs fail
         run: bundle exec rubocop
+      - name: Changelog fragments and ADR index
+        if: ${{ !cancelled() }}
+        run: bundle exec rake changelog:check adr:check

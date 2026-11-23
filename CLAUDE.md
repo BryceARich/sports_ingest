@@ -44,6 +44,9 @@ bundle exec rubocop          # lint (standard config)
 bundle exec yard doc         # build API docs into doc/
 bundle exec yard stats --list-undoc   # doc coverage; CI fails below 90%
 bundle exec rake fixtures:record      # re-record fixtures against live sources (M1-10)
+bundle exec rake changelog:check adr:check   # fragments parse, ADR index rows are right (CI runs this)
+bundle exec rake changelog:preview    # the release section the fragments would make
+bundle exec rake release:prepare[x.y.z]  # at release: compile fragments into CHANGELOG.md, rewrite the ADR index
 ```
 
 ## Code conventions
@@ -58,8 +61,11 @@ bundle exec rake fixtures:record      # re-record fixtures against live sources 
 - Specs never hit the network. Use the VCR/WebMock fixtures; CI runs fully offline.
 - Configuration goes through `SportsIngest.configure` or env vars. **Secrets** (`espn_s2`, `SWID`)
   are redacted in `inspect` and logs, scrubbed from cassettes, and never committed.
-- Any decision with real alternatives gets an ADR in `docs/adr/`.
-- Every change adds a line under "Unreleased" in `CHANGELOG.md` (Keep a Changelog format).
+- Any decision with real alternatives gets an ADR in `docs/adr/`, named after the issue
+  (`docs/adr/0072-slug.md` for #72), never "the next free number". Don't edit the index table in
+  `docs/adr/README.md`; it's rewritten at release (ADR 0072).
+- Every change adds a changelog fragment, `changelog.d/<issue>.md` (Keep a Changelog sections, see
+  `changelog.d/README.md`). Never edit `CHANGELOG.md` directly; fragments are compiled at release.
 - Branch per issue, named after its build order (for example `m1-04-configuration`). Reference the
   issue in the PR, and tick its Definition of Done checklist.
 - `main` is protected by the "Protect main" ruleset: changes only arrive through PRs, which need a

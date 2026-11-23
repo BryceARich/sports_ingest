@@ -1,4 +1,4 @@
-# 0010. Configure through env vars and a block, and wrap secrets in a redacting type
+# 0010. Configure through env vars and a block; wrap secrets in a redacting type
 
 - **Status:** Proposed
 - **Date:** 2026-11-22

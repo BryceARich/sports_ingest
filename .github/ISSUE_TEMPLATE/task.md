@@ -32,4 +32,4 @@ Nothing. Can start once its milestone opens.
 - [ ] Public methods have YARD comments (what, params, returns, raises; an example if usage isn't obvious)
 - [ ] README / `docs/RESUME.md` / `docs/ARCHITECTURE.md` updated if setup, behavior, or structure changed
 - [ ] An ADR in `docs/adr/` for any decision that had real alternatives
-- [ ] A CHANGELOG entry under "Unreleased"
+- [ ] A changelog fragment in `changelog.d/<issue>.md` (not an edit to `CHANGELOG.md`)
