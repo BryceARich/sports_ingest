@@ -16,6 +16,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   each load core plus that one source through its own Zeitwerk loader
   (`SportsIngest::SourceLoader`), and core's loader ignores them. A spec proves each entry point
   loads no other source and no `CSV`, and that core has no native extensions. ADR 0009 (M1-03).
+- `CLAUDE.md` and the issue and PR templates now ask for a YARD `@example` only when usage isn't
+  obvious, and for short comments, with usage in the README and reasons in ADRs (M1-03).
 - Gem skeleton: `sports_ingest.gemspec`, Bundler, Ruby 4.0.10 pinned in `.ruby-version` and installed
   with mise, Zeitwerk autoloading, RSpec, RuboCop with the Standard config, YARD options,
   `bin/console`, a README with the project's goals, and ADR 0007 on the toolchain. The

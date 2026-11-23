@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module SportsIngest
-  # Gives a source module its own Zeitwerk loader (ADR 0008).
+  # Gives a source module its own Zeitwerk loader (ADR 0009).
   module SourceLoader
     # Acronyms in source file names.
     INFLECTIONS = {"nhl" => "NHL", "espn" => "ESPN"}.freeze
@@ -14,6 +14,12 @@ module SportsIngest
     # @param dir [String] the source's folder
     # @return [Zeitwerk::Loader]
     # @raise [Zeitwerk::Error] if +dir+ doesn't exist or is already managed
+    # @example lib/sports_ingest/nhl.rb
+    #   module NHL
+    #     extend SourceLoader
+    #
+    #     load_from "#{__dir__}/nhl"
+    #   end
     def load_from(dir)
       @loader = Zeitwerk::Loader.new.tap do |loader|
         loader.tag = "sports_ingest/#{File.basename(dir)}"
