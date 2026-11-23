@@ -56,12 +56,14 @@ bundle install
 bundle exec rspec     # tests, fully offline
 bundle exec rubocop   # lint (Standard Ruby)
 bundle exec yard doc  # API docs into doc/
+bundle exec rake yard:coverage  # doc coverage; CI fails below 90%
 bin/console           # IRB with the gem loaded
 ```
 
 Rules for contributing (branches, commits, PRs, the Definition of Done) are in
 [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`CLAUDE.md`](CLAUDE.md). The architecture is in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), and decisions in [`docs/adr/`](docs/adr/README.md).
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), decisions in [`docs/adr/`](docs/adr/README.md), and
+per-source endpoints, limits and terms in [`docs/sources/`](docs/sources/README.md).
 
 ## License
 

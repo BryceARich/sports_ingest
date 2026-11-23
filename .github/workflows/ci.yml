@@ -60,3 +60,6 @@ jobs:
       - name: Changelog fragments and ADR index
         if: ${{ !cancelled() }}
         run: bundle exec rake changelog:check adr:check
+      - name: Doc coverage (fails below 90%)
+        if: ${{ !cancelled() }}
+        run: bundle exec rake yard:coverage

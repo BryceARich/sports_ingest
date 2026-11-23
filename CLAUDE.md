@@ -42,7 +42,7 @@ bundle install               # install gems
 bundle exec rspec            # tests (offline, from fixtures)
 bundle exec rubocop          # lint (standard config)
 bundle exec yard doc         # build API docs into doc/
-bundle exec yard stats --list-undoc   # doc coverage; CI fails below 90%
+bundle exec rake yard:coverage       # doc coverage, lists what's undocumented; CI fails below 90%
 bundle exec rake fixtures:record      # re-record fixtures against live sources (M1-10)
 bundle exec rake changelog:check adr:check   # fragments parse, ADR index rows are right (CI runs this)
 bundle exec rake changelog:preview    # the release section the fragments would make

@@ -76,14 +76,14 @@ untracked `.env`). Never put them in a committed file. Other settings (`SPORTS_I
 | One spec file | `bundle exec rspec spec/path/to_spec.rb` |
 | Lint / autofix | `bundle exec rubocop` / `bundle exec rubocop -a` |
 | API docs | `bundle exec yard doc`, then open `doc/index.html` |
-| Doc coverage | `bundle exec yard stats --list-undoc` |
+| Doc coverage (CI fails below 90%) | `bundle exec rake yard:coverage` |
 | Re-record fixtures (hits live APIs) | `bundle exec rake fixtures:record` |
 | Check for licensed data | `script/licensed-data-guard --all` (the hook checks staged files) |
 | Console | `bin/console` |
 | Check changelog fragments and ADR index | `bundle exec rake changelog:check adr:check` |
 | Prepare a release (changelog + ADR index) | `bundle exec rake release:prepare[x.y.z]` |
 
-Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only work once those land.
+Rows that point at later milestones (fixtures M1-10) only work once those land.
 
 ## Where things live
 
@@ -95,7 +95,7 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 | `docs/RESUME.md` | This file |
 | `docs/ARCHITECTURE.md` | Data-flow diagram, module map, how to add a source |
 | `docs/adr/` | Architecture decision records; index and template in `docs/adr/README.md` |
-| `docs/sources/<source>.md` | Per-source notes: endpoints, auth, limits, quirks, terms (M1-12) |
+| `docs/sources/<source>.md` | Per-source notes: endpoints, auth, limits, quirks, terms, last verified; index in `docs/sources/README.md` |
 | `CHANGELOG.md` | Keep a Changelog, newest at top; only changes at release |
 | `changelog.d/` | One changelog fragment per PR (`<issue>.md`), compiled into `CHANGELOG.md` at release |
 | `rakelib/` | Repo rake tasks (changelog, ADR index); not part of the gem |
@@ -125,7 +125,8 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 - **ESPN cookies expire.** If ESPN calls start failing with auth errors, copy fresh `espn_s2` and
   `SWID` values from a logged-in browser.
 - **NHL APIs are undocumented** and change between seasons. Re-record fixtures and update
-  `docs/sources/nhl.md` with the date you verified them.
+  `docs/sources/nhl.md` with the date you verified them. Each adapter issue adds the endpoints it
+  uses to its source note (`docs/sources/README.md`).
 - **Parallel PRs:** don't edit `CHANGELOG.md` or the ADR index table, and don't take "the next
   free" ADR number. Add `changelog.d/<issue>.md` and name ADRs after the issue (ADR 0072).
   "Unreleased" in `CHANGELOG.md` looks stale between releases; `rake changelog:preview` shows
