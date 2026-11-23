@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module SportsIngest
-  # Player identity: canonical IDs, and later the normalizer, matcher and crosswalk (M3).
+  # Player identity: canonical IDs, the name normalizer, and later the matcher and crosswalk (M3).
   module Identity
     # One player's identity: the canonical ID plus each source's own ID for that player
     # (ADR 0004, ADR 0026).
