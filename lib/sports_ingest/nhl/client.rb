@@ -21,6 +21,9 @@ module SportsIngest
       # Base URL of the web API.
       BASE_URL = "https://api-web.nhle.com/v1"
 
+      # Same as {BASE_URL}; the name M2-07 (rosters) uses.
+      WEB_URL = BASE_URL
+
       # Base URL of the stats REST API (English).
       STATS_URL = "https://api.nhle.com/stats/rest/en"
 
@@ -46,6 +49,27 @@ module SportsIngest
       # @raise [ParseError] if the body isn't JSON
       def get_json(path, params: {})
         parse(get(url_for(path), params: params))
+      end
+
+      # Same as {#get_json}.
+      #
+      # @param (see #get_json)
+      # @return (see #get_json)
+      # @raise (see #get_json)
+      def web(path, params: {})
+        get_json(path, params: params)
+      end
+
+      # Fetches a web API path without parsing it. Use it when you need the response's
+      # +fetched_at+ or +stale+.
+      #
+      # @param path [String] the path after +/v1/+
+      # @param params [Hash{#to_s => #to_s}] query parameters
+      # @return [HTTP::Response] the response, possibly from the raw cache
+      # @raise [NotFound] on 404
+      # @raise [HTTPError] on any other failure, as {HTTP::Client#get} does
+      def web_response(path, params: {})
+        get(url_for(path), params: params)
       end
 
       # Fetches a stats REST API path and parses the JSON body.
