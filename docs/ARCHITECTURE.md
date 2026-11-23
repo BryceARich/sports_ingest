@@ -84,7 +84,7 @@ Planned layout under `lib/` (Zeitwerk autoloading, one constant per file, paths 
 | `lib/sports_ingest.rb` | `SportsIngest` | `require "sports_ingest"` (core only) | M1-01 |
 | `lib/sports_ingest/source_loader.rb` | `SportsIngest::SourceLoader` | core | M1-03 |
 | `lib/sports_ingest/configuration.rb` | `SportsIngest::Configuration` (+ `Configurable`, `Secret`) | core | M1-04 |
-| `lib/sports_ingest/http/` | `SportsIngest::HTTP::*` | core | M1-05 |
+| `lib/sports_ingest/http.rb` + `http/` | `SportsIngest::HTTP`: `Client`, `Response`, `Backoff`, `RateLimiter` ([ADR 0008](adr/0008-http-client-on-net-http.md)) | core | M1-05 |
 | `lib/sports_ingest/cache/` | `SportsIngest::Cache::*` (raw and processed tiers) | core | M1-06, M1-07 |
 | `lib/sports_ingest/model.rb` + `model/` | `SportsIngest::Model` (base, on `Data`, [ADR 0011](adr/0011-models-on-ruby-data.md)) | core | M1-08 |
 | `lib/sports_ingest/error.rb`, `*_error.rb`, `not_found.rb` | `SportsIngest::Error` and subclasses, one per file ([ADR 0012](adr/0012-error-hierarchy.md)) | core | M1-04 (base), M1-09 |

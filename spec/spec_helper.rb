@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "sports_ingest"
+require "webmock/rspec" # no spec may reach the network
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
