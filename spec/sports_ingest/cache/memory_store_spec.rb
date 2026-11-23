@@ -17,6 +17,7 @@ RSpec.describe SportsIngest::Cache::MemoryStore do
     store.write("b", {})
     store.delete("a")
     expect(store.read("a")).to be_nil
+    expect(store.keys).to eq(["b"])
 
     store.clear
     expect(store.read("b")).to be_nil
@@ -29,5 +30,6 @@ RSpec.describe SportsIngest::Cache::NullStore do
     store.write("k", {"x" => 1})
 
     expect(store.read("k")).to be_nil
+    expect(store.keys).to eq([])
   end
 end

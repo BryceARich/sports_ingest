@@ -20,6 +20,9 @@ module SportsIngest
       # @return [void]
       def delete(_key) = nil
 
+      # @return [Array<String>] always empty
+      def keys = []
+
       # @return [void]
       def clear = nil
     end

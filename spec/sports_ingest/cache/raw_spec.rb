@@ -71,7 +71,7 @@ RSpec.describe SportsIngest::Cache::Raw do
     it "serves the cached response, marked stale, when the network errors" do
       fetch_once
       stub_request(:get, url).to_timeout
-      later = described_class.new(client: client, store: store, configuration: config, clock: -> { now + 86_400 })
+      later = described_class.new(client: client, store: store, configuration: config, clock: -> { now + 5_999 })
 
       response = later.get(url)
 
@@ -81,7 +81,7 @@ RSpec.describe SportsIngest::Cache::Raw do
 
     it "serves stale on a 5xx or 429 after retries" do
       fetch_once
-      later = described_class.new(client: client, store: store, configuration: config, clock: -> { now + 86_400 })
+      later = described_class.new(client: client, store: store, configuration: config, clock: -> { now + 3600 })
 
       stub_request(:get, url).to_return(status: 503)
       expect(later.get(url)).to be_stale
@@ -124,6 +124,119 @@ RSpec.describe SportsIngest::Cache::Raw do
       store.write(cache.key_for(url), {"schema_version" => 1, "status" => 200})
 
       expect(cache.get(url).body).to eq('{"ok":true}')
+    end
+  end
+
+  describe "eviction" do
+    # nhl's TTL is 600 in `config`, so entries are evicted at 6000 seconds by default.
+    def cache_at(time, **options)
+      described_class.new(client: client, store: store, configuration: config, clock: -> { time }, **options)
+    end
+
+    before { stub_request(:get, url).to_return(status: 200, body: '{"ok":true}') }
+
+    it "serves stale up to 10 x TTL with no settings" do
+      fetch_once
+      stub_request(:get, url).to_timeout
+
+      expect(cache_at(now + 5_999).get(url)).to be_stale
+    end
+
+    it "refetches an evicted entry when the network works" do
+      fetch_once
+      cache_at(now + 6_000).get(url)
+
+      expect(a_request(:get, url)).to have_been_made.twice
+    end
+
+    it "raises instead of serving an evicted entry stale, and leaves no file behind" do
+      Dir.mktmpdir do |dir|
+        disk = SportsIngest::Cache::DiskStore.new(dir)
+        allow(Time).to receive(:now).and_return(now)
+        described_class.new(client: client, store: disk, configuration: config, clock: -> { now }).get(url)
+        allow(Time).to receive(:now).and_call_original
+        stub_request(:get, url).to_timeout
+
+        later = described_class.new(client: client, store: disk, configuration: config, clock: -> { now + 6_000 })
+
+        expect { later.get(url) }.to raise_error(SportsIngest::HTTPError)
+        expect(disk.keys).to be_empty
+        expect(Dir.glob("#{dir}/**/*.json")).to be_empty
+      end
+    end
+
+    it "uses the configured eviction age" do
+      config.evict_after = {nhl: 60}
+      fetch_once
+      stub_request(:get, url).to_timeout
+
+      expect { cache_at(now + 60).get(url) }.to raise_error(SportsIngest::HTTPError)
+    end
+
+    it "never evicts with an eviction age of 0" do
+      fetch_once
+      stub_request(:get, url).to_timeout
+
+      expect(cache_at(now + (365 * 86_400), evict_after: 0).get(url)).to be_stale
+    end
+
+    it "derives the age from a ttl given to the cache" do
+      fetch_once
+      stub_request(:get, url).to_timeout
+
+      expect(cache_at(now + 59_999, ttl: 6_000).get(url)).to be_stale
+      expect { cache_at(now + 60_000, ttl: 6_000).get(url) }.to raise_error(SportsIngest::HTTPError)
+    end
+
+    it "rejects a negative evict_after" do
+      expect { described_class.new(client: client, evict_after: -1) }.to raise_error(SportsIngest::ConfigurationError)
+    end
+  end
+
+  describe "#prune" do
+    let(:fresh_key) { cache.key_for(url) }
+
+    def entry(fetched_at)
+      {"schema_version" => 1, "status" => 200, "headers" => {}, "url" => url,
+       "fetched_at" => fetched_at.utc.iso8601(6), "encoding" => "UTF-8", "body" => "x"}
+    end
+
+    it "deletes expired entries for every source, damaged ones too, and keeps the rest" do
+      Dir.mktmpdir do |dir|
+        disk = SportsIngest::Cache::DiskStore.new(dir)
+        old_cookie = cache.key_for(url, {}, {"Cookie" => SportsIngest::Secret.new("espn_s2=old")})
+          .sub("nhl/", "espn/")
+        disk.write(fresh_key, entry(now - 5_999))           # nhl, within 10 x 600
+        disk.write("nhl/aa/old", entry(now - 6_000))        # nhl, evicted
+        disk.write(old_cookie, entry(now - 9_000))          # espn: 10 x 900, evicted
+        disk.write("espn/bb/recent", entry(now - 8_999))    # espn, kept
+        disk.write("nhl/cc/damaged", {"schema_version" => 1})
+        disk.write("future_source/dd/v2", entry(now - 36_000).merge("schema_version" => 2)) # 10 x default 3600
+
+        deleted = cache.prune(disk)
+
+        expect(deleted).to eq(4)
+        expect(disk.keys).to contain_exactly(fresh_key, "espn/bb/recent")
+      end
+    end
+
+    it "sweeps the store on its own after a write, at most once an hour" do
+      Dir.mktmpdir do |dir|
+        disk = SportsIngest::Cache::DiskStore.new(dir)
+        stub_request(:get, %r{api\.example\.test}).to_return(status: 200, body: "x")
+        at = ->(time) { described_class.new(client: client, store: disk, configuration: config, clock: -> { time }) }
+
+        disk.write("nhl/aa/old", entry(now - 6_000))
+        at.call(now).get(url)
+        expect(disk.read("nhl/aa/old")).to be_nil
+
+        disk.write("nhl/aa/old", entry(now - 6_000))
+        at.call(now + 3_599).get("#{url}/2")
+        expect(disk.read("nhl/aa/old")).not_to be_nil
+
+        at.call(now + 3_600).get("#{url}/3")
+        expect(disk.read("nhl/aa/old")).to be_nil
+      end
     end
   end
 

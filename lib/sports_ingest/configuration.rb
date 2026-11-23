@@ -16,6 +16,8 @@ module SportsIngest
   # | {#processed_cache} | +SPORTS_INGEST_PROCESSED_CACHE+ (+disk+, +memory+ or +off+) | +:disk+ |
   # | {#default_ttl} | +SPORTS_INGEST_TTL+ | 3600 seconds |
   # | {#ttl_for}(source) | +SPORTS_INGEST_TTL_<SOURCE>+, e.g. +SPORTS_INGEST_TTL_NHL+ | {DEFAULT_TTLS} |
+  # | {#default_evict_after} | +SPORTS_INGEST_EVICT_AFTER+ | none: {EVICT_AFTER_TTLS} x the source's TTL |
+  # | {#evict_after_for}(source) | +SPORTS_INGEST_EVICT_AFTER_<SOURCE>+ | {#default_evict_after} |
   # | {#espn_s2} | +SPORTS_INGEST_ESPN_S2+ | none |
   # | {#espn_swid} | +SPORTS_INGEST_ESPN_SWID+ | none |
   #
@@ -46,6 +48,9 @@ module SportsIngest
       nflverse: 86_400
     }.freeze
 
+    # With no eviction age set, a raw-cache entry is evicted at this many times its source's TTL.
+    EVICT_AFTER_TTLS = 10
+
     # @return [Pathname] directory the raw and processed caches live under. Defaults to a
     #   per-user cache directory outside any repository.
     attr_reader :cache_dir
@@ -64,6 +69,11 @@ module SportsIngest
     # @return [Integer] TTL in seconds for sources with no entry in {#ttls}
     attr_reader :default_ttl
 
+    # @return [Integer, nil] seconds after which a raw-cache entry is evicted, for sources with no
+    #   entry in {#evict_after}. +nil+ (the default) means {EVICT_AFTER_TTLS} x the source's TTL;
+    #   0 means never evict.
+    attr_reader :default_evict_after
+
     # @return [Secret, nil] the ESPN +espn_s2+ cookie, for private leagues
     attr_reader :espn_s2
 
@@ -78,6 +88,8 @@ module SportsIngest
     #   SportsIngest::Configuration.new(env: {"SPORTS_INGEST_TTL_NHL" => "60"}).ttl_for(:nhl) # => 60
     def initialize(env: ENV)
       @ttls = DEFAULT_TTLS.dup
+      @evict_after = {}
+      @default_evict_after = nil
       self.cache_dir = default_cache_dir(env)
       self.user_agent = "sports_ingest/#{VERSION} (+https://github.com/BryceARich/sports_ingest)"
       self.default_ttl = DEFAULT_TTL
@@ -170,6 +182,68 @@ module SportsIngest
       @ttls.fetch(source.to_sym, default_ttl)
     end
 
+    # @param seconds [Integer, String, nil] eviction age for sources with no age of their own; 0
+    #   means never evict, +nil+ goes back to {EVICT_AFTER_TTLS} x each source's TTL
+    # @return [void]
+    # @raise [ConfigurationError] unless +seconds+ is +nil+ or a non-negative integer
+    # @example
+    #   config.default_evict_after = 7 * 86_400 # keep every entry a week
+    def default_evict_after=(seconds)
+      @default_evict_after = seconds.nil? ? nil : coerce_ttl(seconds, "default_evict_after")
+    end
+
+    # Per-source eviction ages set explicitly (sources not listed use {#evict_after_for}'s default).
+    #
+    # @return [Hash{Symbol => Integer}] a frozen copy; change it with {#evict_after=}
+    # @example
+    #   config.evict_after # => {}
+    def evict_after
+      @evict_after.dup.freeze
+    end
+
+    # Merges per-source eviction ages over the current ones. A +nil+ value removes a source's age.
+    #
+    # @param overrides [Hash{Symbol, String => Integer, String, nil}] source name to seconds; 0
+    #   means never evict
+    # @return [void]
+    # @raise [ConfigurationError] if a value is not +nil+ or a non-negative integer
+    # @example
+    #   config.evict_after = {espn: 3600, nflverse: 0} # nflverse entries are never evicted
+    def evict_after=(overrides)
+      raise ConfigurationError, "evict_after must be a Hash, got #{overrides.class}" unless overrides.is_a?(Hash)
+
+      overrides.each do |source, seconds|
+        if seconds.nil?
+          @evict_after.delete(source.to_sym)
+        else
+          @evict_after[source.to_sym] = coerce_ttl(seconds, "evict_after[#{source}]")
+        end
+      end
+    end
+
+    # The age at which a raw-cache entry for one source is deleted and no longer served, even stale
+    # (ADR 0081 in +docs/adr/0081-raw-cache-eviction.md+).
+    #
+    # In order: the source's own age in {#evict_after}, then {#default_evict_after}, then
+    # {EVICT_AFTER_TTLS} x {#ttl_for}(source). A source with a TTL of 0 uses {#default_ttl}
+    # instead, so it keeps a stale fallback.
+    #
+    # @param source [Symbol, String] the source name, e.g. +:nhl+
+    # @param ttl [Integer, nil] the TTL to multiply instead of {#ttl_for}(source), for a cache
+    #   given a TTL of its own
+    # @return [Integer] seconds; 0 means never evict
+    # @example
+    #   config.evict_after_for(:nhl)  # => 36000 (10 x 3600)
+    #   config.evict_after_for(:espn) # => 9000
+    def evict_after_for(source, ttl: nil)
+      @evict_after.fetch(source.to_sym) do
+        next default_evict_after unless default_evict_after.nil?
+
+        ttl ||= ttl_for(source)
+        EVICT_AFTER_TTLS * (ttl.zero? ? default_ttl : ttl)
+      end
+    end
+
     # @param value [String, Secret, nil] the +espn_s2+ cookie; +nil+ clears it
     # @return [void]
     # @raise [ConfigurationError] if +value+ is an empty String or not a String
@@ -210,6 +284,8 @@ module SportsIngest
         processed_cache: processed_cache,
         default_ttl: default_ttl,
         ttls: ttls,
+        default_evict_after: default_evict_after,
+        evict_after: evict_after,
         espn_s2: espn_s2&.to_s,
         espn_swid: espn_swid&.to_s
       }
@@ -250,6 +326,7 @@ module SportsIngest
       read.call("RAW_CACHE")&.then { |v| self.raw_cache = v }
       read.call("PROCESSED_CACHE")&.then { |v| self.processed_cache = v }
       read.call("TTL")&.then { |v| self.default_ttl = v }
+      read.call("EVICT_AFTER")&.then { |v| self.default_evict_after = v }
       read.call("ESPN_S2")&.then { |v| self.espn_s2 = v }
       read.call("ESPN_SWID")&.then { |v| self.espn_swid = v }
 
@@ -258,6 +335,13 @@ module SportsIngest
         next if source.nil? || value.to_s.strip.empty?
 
         self.ttls = {source.downcase.to_sym => value}
+      end
+
+      env.each do |name, value|
+        source = name[/\A#{ENV_PREFIX}EVICT_AFTER_(\w+)\z/o, 1]
+        next if source.nil? || value.to_s.strip.empty?
+
+        self.evict_after = {source.downcase.to_sym => value}
       end
     end
 
