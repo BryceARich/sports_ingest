@@ -3,7 +3,7 @@
 A Ruby gem for **reading** sports data and turning it into clean, cached Ruby models that other
 projects (fantasy tools, dashboards, a future API) consume.
 
-> **Status:** early development (M1 Foundation). The gem skeleton exists; no source adapters yet.
+> **Status:** early development (M1 Foundation). The first importer (PuckPedia contracts) exists; the rest arrive in M2 to M6.
 > See [`docs/RESUME.md`](docs/RESUME.md) for current status and the next issues.
 
 ## Goals
@@ -29,7 +29,7 @@ projects (fantasy tools, dashboards, a future API) consume.
 | nflverse releases | `sports_ingest/nflverse` | GitHub release files |
 | Evolving-Hockey + PuckPedia | `sports_ingest/advanced_hockey` | licensed, manually exported files only |
 
-None of these are implemented yet; they arrive in milestones M2 to M6.
+Only the PuckPedia contract import is implemented so far; the rest arrive in milestones M2 to M6.
 
 ## Usage
 
@@ -43,6 +43,16 @@ Each source loads on its own, with core but no other source:
 
 ```ruby
 require "sports_ingest/nhl" # SportsIngest::NHL, nothing from ESPN, nflverse or CSV
+```
+
+Contracts from a PuckPedia cap-hit export you saved yourself (keep it outside the repo):
+
+```ruby
+require "sports_ingest/advanced_hockey"
+
+contracts = SportsIngest::AdvancedHockey::PuckPedia.contracts("~/exports/2026-CAPHIT.csv")
+contracts.first.cap_hit      # => 9100000 (dollars)
+contracts.first.start_season # => 2026 (2026-27, ADR 0006)
 ```
 
 ## Development

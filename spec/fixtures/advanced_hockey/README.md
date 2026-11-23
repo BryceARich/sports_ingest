@@ -6,3 +6,7 @@ players, teams and numbers, never values copied or derived from a real export.
 
 This is the only folder `script/licensed-data-guard` lets through (ADR 0014), so reviewers check
 every file added here by hand.
+
+| File | Layout |
+|---|---|
+| `puckpedia_cap_hit_2026.csv` | 2026 PuckPedia cap-hit sheet (`2026-CAPHIT`): every real header, invented players and values |
