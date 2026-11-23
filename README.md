@@ -29,8 +29,8 @@ projects (fantasy tools, dashboards, a future API) consume.
 | nflverse releases | `sports_ingest/nflverse` | GitHub release files |
 | Evolving-Hockey + PuckPedia | `sports_ingest/advanced_hockey` | licensed, manually exported files only |
 
-They arrive in milestones M2 to M6. So far, the Evolving-Hockey skater GAR table can be imported
-(below).
+They arrive in milestones M2 to M6. So far: the Evolving-Hockey skater GAR import, the ESPN
+Fantasy client and nflverse release downloads (below).
 
 ## Usage
 
@@ -95,6 +95,21 @@ espn.get_json("seasons/2027/players", views: ["kona_player_info"],
 ```
 
 Hockey seasons are named by the year they end (2026-27 is `2027`), football by the year it starts.
+
+### nflverse release files
+
+```ruby
+require "sports_ingest/nflverse"
+
+downloader = SportsIngest::Nflverse::ReleaseDownloader.new
+release = downloader.fetch("stats_player", "stats_player_week_2025.csv")
+release.path         # a local file under <cache_dir>/releases/nflverse/stats_player/
+release.last_updated # => "2026-11-22 05:12:43 EST", from the tag's timestamp.json
+```
+
+A file is downloaded once and reused until the tag's `timestamp.json` changes, which is checked at
+most once per nflverse TTL (`SPORTS_INGEST_TTL_NFLVERSE`, a day by default). Offline, the last copy
+comes back with `stale: true`. nflverse data is CC-BY-4.0: credit nflverse wherever you show it.
 
 ## Development
 
