@@ -1,9 +1,11 @@
 # ESPN Fantasy
 
 - **Module:** `sports_ingest/espn` (M4), read-only
-- **Last verified:** 2026-11-22: the public game and player-pool endpoints below returned 200 by
-  hand with `curl`. League endpoints were **not** verified (no league ID or cookies on hand); the
-  M4-01 session should verify them and update this line.
+- **Last verified:** 2026-11-23 (M4-01): `/seasons/2027` returned 200 (cassette
+  `espn/fhl_season_2027`); unknown league IDs returned 404 with the JSON below, and an ID too big for
+  ESPN returned 400. A **private** league's 401 was not seen live (none on hand); the client relies
+  only on the status.
+- **Client:** `SportsIngest::ESPN::Client` (ADR 0032); filters with `SportsIngest::ESPN::Filter`
 - **Default raw-cache TTL:** 900 seconds (`SPORTS_INGEST_TTL_ESPN`)
 
 ## Endpoints used
@@ -26,7 +28,12 @@ Players carry a `proTeamId` (0 means free agent). It's ESPN's team ID, and maps 
 `SportsIngest::Teams.find_by_source_id(:espn, id)`; checked against the player pool on 2026-11-22.
 ESPN's abbreviations differ from the NHL's for `LA`, `NJ`, `SJ`, `TB` and `UTAH`.
 
-The `X-Fantasy-Filter` header is JSON, e.g. `{"players":{"limit":50}}`; M4-01 builds it.
+Pass views as `views: [...]`; the client sends each as its own `view=` parameter.
+
+The `X-Fantasy-Filter` header is JSON, e.g. `{"players":{"limit":50}}`. Build it with
+`ESPN::Filter.players(limit:, offset:, ids:, status:, slot_ids:, sort_percent_owned:)` (keys
+`limit`, `offset`, `filterIds`, `filterStatus` with `FREEAGENT` / `WAIVERS` / `ONTEAM`,
+`filterSlotIds`, `sortPercOwned`), or `ESPN::Filter.new(hash)` for other keys.
 
 ```bash
 curl -s -H 'X-Fantasy-Filter: {"players":{"limit":1}}' \
@@ -37,7 +44,9 @@ curl -s -H 'X-Fantasy-Filter: {"players":{"limit":1}}' \
 
 Public leagues need none. Private leagues need the `espn_s2` and `SWID` cookies from a logged-in
 browser, set through `SPORTS_INGEST_ESPN_S2` / `SPORTS_INGEST_ESPN_SWID` or `SportsIngest.configure`
-(ADR 0010). They are secrets: redacted in `inspect` and logs, scrubbed from cassettes.
+(ADR 0010). They are secrets: redacted in `inspect` and logs, scrubbed from cassettes. The client
+sends `Cookie: espn_s2=...; SWID=...` on every request when both are set, and none when either is
+missing. `SWID` keeps its braces, `{...}`, as the browser shows it.
 
 ## Rate limits
 
@@ -47,6 +56,8 @@ None published. Keep calls few and cached; the player pool is large, so filter i
 
 - **Cookies expire.** Auth failures on a league that worked before mean fresh `espn_s2` / `SWID`
   values are needed (`SportsIngest::AuthError`).
+- **League IDs too big for ESPN's integer return `400`** (`Invalid parameter for 'leagueId'`),
+  which surfaces as `SportsIngest::HTTPError`.
 - **Unknown league IDs return `404`** with `{"messages":["Not Found"], ...}`; map to
   `SportsIngest::NotFound`.
 - **Read-only.** Never call write endpoints; `ESPN::Write` is reserved behind an explicit opt-in
