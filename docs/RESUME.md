@@ -2,25 +2,25 @@
 
 Start here after time away. Update this file at the end of every milestone.
 
-_Last updated: 2026-11-22 (end of M0)._
+_Last updated: 2026-11-22 (M1-01 gem skeleton)._
 
 ## Current status
 
 | Milestone | State |
 |---|---|
 | M0 Documentation & conventions | **done**: `CLAUDE.md`, this file, `ARCHITECTURE.md`, ADRs, issue/PR templates, `CONTRIBUTING.md` |
-| M1 Foundation | **next**: no gem code exists yet |
+| M1 Foundation | **in progress**: gem skeleton (M1-01) done |
 | M2 to M7 | not started |
 | M8 Later | not scheduled |
 
-There's no Ruby code yet, so there are no tests to run. "Green tests" becomes possible once
-M1-01 (gem skeleton) lands. Until then, setup ends at step 4 below.
+The gem skeleton exists, so setup ends with green tests and a clean lint (steps 1 to 4 below).
+There's no source code yet.
 
 ## Next 3 issues to take
 
-1. **M1-01** Gem skeleton (#4)
-2. **M1-02** CI matrix (#5)
-3. **M1-03** Modular loading (#6)
+1. **M1-02** CI matrix (#5)
+2. **M1-03** Modular loading (#6)
+3. **M1-04** Configuration and secrets (#7)
 
 All issues and their order are on GitHub: <https://github.com/BryceARich/sports_ingest/issues>.
 The `[Mx-yy]` prefix in each title is the build order.
@@ -55,7 +55,7 @@ bundle exec rspec             # 3. tests: should be green, fully offline
 bundle exec rubocop           # 4. lint: should be clean
 ```
 
-Steps 1 to 4 need the gem skeleton (M1-01). Before that, cloning the repo is the whole setup.
+`bin/setup` runs steps 1 and 2 for you.
 
 Optional, only for ESPN private leagues (M4): copy your `espn_s2` and `SWID` cookies into
 environment variables (names are defined in M1-04). Never put them in a committed file.
@@ -95,6 +95,9 @@ Rows that point at later milestones (fixtures M1-10, YARD threshold M1-12) only 
 
 - **macOS system Ruby (2.6) is too old.** Make sure `which ruby` points into mise, not `/usr/bin/ruby`.
   If it doesn't, the `mise activate` line isn't in your shell profile.
+- **mise ignores `.ruby-version` by default** (mise 2026.x), so `mise install` installs nothing.
+  Until #5 fixes setup, run `mise settings add idiomatic_version_file_enable_tools ruby` once per
+  machine. `mise current ruby` should then print `4.0.10`.
 - **The Pi is slow to build Ruby** and native gems. That's why core avoids native extensions:
   adding one means checking it installs on the Pi first.
 - **Licensed data:** EH and PuckPedia files must never be committed, including derived caches and

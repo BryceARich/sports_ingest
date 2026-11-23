@@ -1,0 +1,17 @@
+/.bundle/
+/vendor/bundle/
+/pkg/
+/tmp/
+/coverage/
+
+# YARD
+/.yardoc/
+/doc/
+
+# RSpec
+/spec/examples.txt
+
+# Local config and secrets (ESPN cookies etc.) never get committed
+.env
+.env.*
+/mise.local.toml

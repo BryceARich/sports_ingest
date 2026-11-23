@@ -1,0 +1,22 @@
+# Style is Standard Ruby (https://github.com/standardrb/standard), run through RuboCop so
+# `bundle exec rubocop` works. Every override below needs a comment saying why, and cops are
+# never disabled inline without one (see CLAUDE.md).
+require:
+  - standard
+
+inherit_gem:
+  standard: config/base.yml
+
+AllCops:
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "doc/**/*"
+    - "pkg/**/*"
+    - "vendor/**/*"
+
+# The helper scripts in script/ are standalone executables that mix ClaudeScripts into the
+# top-level object on purpose, so each script can call the helpers directly.
+Style/MixinUsage:
+  Exclude:
+    - "script/**/*"
