@@ -95,7 +95,7 @@ Planned layout under `lib/` (Zeitwerk autoloading, one constant per file, paths 
 | `lib/sports_ingest/advanced_hockey.rb` + `advanced_hockey/` | `SportsIngest::AdvancedHockey` | `require "sports_ingest/advanced_hockey"` | M6 |
 | `lib/sports_ingest/snapshot/` | snapshot export and offline mode | core | M7 |
 | `spec/` | RSpec specs, VCR/WebMock fixtures | — | M1 |
-| `docs/sources/<source>.md` | per-source endpoints, auth, limits, quirks, terms | — | M1-12 |
+| `docs/sources/<source>.md` | per-source endpoints, auth, limits, quirks, terms, last verified ([index](sources/README.md)) | — | M1-12 |
 
 Loading rules (M1-03):
 
@@ -111,8 +111,9 @@ Loading rules (M1-03):
 
 ## How to add a new source
 
-1. **Write it down first.** Open an issue. Create `docs/sources/<source>.md` with the endpoints or
-   file formats, auth, rate limits, quirks, and the source's terms of use. If the data is licensed
+1. **Write it down first.** Open an issue. Create `docs/sources/<source>.md` from the template in
+   [`docs/sources/README.md`](sources/README.md): the endpoints or file formats, auth, rate limits,
+   quirks, the source's terms of use, and the date you verified it. Add it to that index. If the data is licensed
    to the user, follow [ADR 0005](adr/0005-licensed-data-never-committed.md) from the start.
 2. **Add an ADR** if adding the source involves a real choice (a new dependency, a new auth scheme,
    scraping versus manual export, and so on).
@@ -137,5 +138,6 @@ Loading rules (M1-03):
    matched result to the processed cache so consumers never re-import.
 9. **Tests.** Record fixtures (VCR/WebMock) so specs run offline. Licensed sources use the real
    column layout with invented values.
-10. **Docs.** YARD on every public method, a row in this file's module map and data-flow diagram,
-    the table in `CLAUDE.md`, and a changelog fragment in `changelog.d/`.
+10. **Docs.** YARD on every public method (CI fails below 90% coverage, `rake yard:coverage`), a
+    row in this file's module map and data-flow diagram, the table in `CLAUDE.md`, and a changelog
+    fragment in `changelog.d/`.
