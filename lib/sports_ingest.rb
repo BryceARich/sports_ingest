@@ -29,4 +29,6 @@ module SportsIngest
   @loader = Zeitwerk::Loader.for_gem
   SOURCES.each { |source| @loader.ignore("#{__dir__}/sports_ingest/#{source}{.rb,}") }
   @loader.setup
+
+  extend Configurable # SportsIngest.configure / .configuration (M1-04)
 end

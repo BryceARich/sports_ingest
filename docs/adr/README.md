@@ -24,3 +24,4 @@ didn't, and what follows. See [`../ARCHITECTURE.md`](../ARCHITECTURE.md) for how
 | [0007](0007-ruby-toolchain.md) | Pin Ruby with mise, autoload with Zeitwerk, lint with Standard | Proposed |
 | [0008](0008-ci-matrix-and-mise-setting.md) | CI on macOS Intel and Ubuntu ARM64; mise reads `.ruby-version` via a setting | Proposed |
 | [0009](0009-one-zeitwerk-loader-per-source.md) | Give each source its own Zeitwerk loader | Proposed |
+| [0010](0010-configuration-and-secrets.md) | Configure through env vars and a block; wrap secrets in a redacting type | Proposed |
