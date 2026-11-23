@@ -7,6 +7,9 @@ module SportsIngest
   module AdvancedHockey
     extend SourceLoader
 
+    # The +source+ on errors this module raises.
+    SOURCE = :advanced_hockey
+
     load_from "#{__dir__}/advanced_hockey"
   end
 end

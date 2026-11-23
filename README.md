@@ -29,7 +29,8 @@ projects (fantasy tools, dashboards, a future API) consume.
 | nflverse releases | `sports_ingest/nflverse` | GitHub release files |
 | Evolving-Hockey + PuckPedia | `sports_ingest/advanced_hockey` | licensed, manually exported files only |
 
-None of these are implemented yet; they arrive in milestones M2 to M6.
+They arrive in milestones M2 to M6. So far, the Evolving-Hockey skater GAR table can be imported
+(below).
 
 ## Usage
 
@@ -44,6 +45,28 @@ Each source loads on its own, with core but no other source:
 ```ruby
 require "sports_ingest/nhl" # SportsIngest::NHL, nothing from ESPN, nflverse or CSV
 ```
+
+### Evolving-Hockey skater GAR
+
+Download EH's skater GAR table as CSV (`EH_gar_sk_stats_regular_<date>.csv`) into a folder
+**outside the repo**. EH groups it by season or by team and season; both import the same way:
+
+```ruby
+require "sports_ingest/advanced_hockey"
+include SportsIngest::AdvancedHockey
+
+rows = SkaterGarImport.read("~/hockey/EH_gar_sk_stats_regular_2026-11-23.csv")
+rows.first.season # => 2026 (the 26-27 season, named by its start year)
+rows.first.teams  # => ["N.J", "WPG"] for a traded player, grouped by season
+rows.first.war    # => 0.9
+
+SkaterGar.combine(rows) # one row per player and season, whichever grouping you exported
+```
+
+Grouped by team, a traded player has a row per team, but EH drops short stints from that view, so
+use the season grouping for exact totals. Columns are matched by name (`EVO_GAR` or `EVO GAR`), so
+a spreadsheet tab saved as CSV works too; a missing column raises
+`SportsIngest::SourceChangedError` listing the columns it found.
 
 ## Development
 

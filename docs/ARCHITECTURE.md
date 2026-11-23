@@ -92,7 +92,7 @@ Planned layout under `lib/` (Zeitwerk autoloading, one constant per file, paths 
 | `lib/sports_ingest/nhl.rb` + `nhl/` | `SportsIngest::NHL` | `require "sports_ingest/nhl"` | M2 |
 | `lib/sports_ingest/espn.rb` + `espn/` | `SportsIngest::ESPN` | `require "sports_ingest/espn"` | M4 |
 | `lib/sports_ingest/nflverse.rb` + `nflverse/` | `SportsIngest::Nflverse` | `require "sports_ingest/nflverse"` | M5 |
-| `lib/sports_ingest/advanced_hockey.rb` + `advanced_hockey/` | `SportsIngest::AdvancedHockey` | `require "sports_ingest/advanced_hockey"` | M6 |
+| `lib/sports_ingest/advanced_hockey.rb` + `advanced_hockey/` | `SportsIngest::AdvancedHockey` (CSV imports such as `SkaterGarImport`, [ADR 0044](adr/0044-eh-tables-as-csv-with-loose-headers.md)) | `require "sports_ingest/advanced_hockey"` | M6 |
 | `lib/sports_ingest/snapshot/` | snapshot export and offline mode | core | M7 |
 | `spec/` | RSpec specs, VCR/WebMock fixtures | — | M1 |
 | `docs/sources/<source>.md` | per-source endpoints, auth, limits, quirks, terms, last verified ([index](sources/README.md)) | — | M1-12 |
