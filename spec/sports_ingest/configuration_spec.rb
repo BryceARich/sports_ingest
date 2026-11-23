@@ -52,8 +52,11 @@ RSpec.describe SportsIngest::Configuration do
         "SPORTS_INGEST_USER_AGENT" => "test-agent/1.0",
         "SPORTS_INGEST_TTL" => "120",
         "SPORTS_INGEST_RAW_CACHE" => "Memory",
+        "SPORTS_INGEST_PROCESSED_CACHE" => "off",
         "SPORTS_INGEST_TTL_NHL" => "60",
         "SPORTS_INGEST_TTL_PUCKPEDIA" => "0",
+        "SPORTS_INGEST_EVICT_AFTER" => "86400",
+        "SPORTS_INGEST_EVICT_AFTER_ESPN" => "7200",
         "SPORTS_INGEST_ESPN_S2" => s2,
         "SPORTS_INGEST_ESPN_SWID" => swid,
         "UNRELATED" => "ignored"
@@ -65,10 +68,14 @@ RSpec.describe SportsIngest::Configuration do
       expect(config.user_agent).to eq("test-agent/1.0")
       expect(config.default_ttl).to eq(120)
       expect(config.raw_cache).to eq(:memory)
+      expect(config.processed_cache).to eq(:off)
       expect(config.ttl_for(:nhl)).to eq(60)
       expect(config.ttl_for(:puckpedia)).to eq(0)
       expect(config.ttl_for(:espn)).to eq(900)
       expect(config.ttl_for(:other)).to eq(120)
+      expect(config.default_evict_after).to eq(86_400)
+      expect(config.evict_after_for(:espn)).to eq(7200)
+      expect(config.evict_after_for(:nhl)).to eq(86_400)
       expect(config.espn_s2.reveal).to eq(s2)
       expect(config.espn_swid.reveal).to eq(swid)
       expect(config).to be_espn_credentials
@@ -108,12 +115,52 @@ RSpec.describe SportsIngest::Configuration do
       expect { config.ttls = [] }.to raise_error(SportsIngest::ConfigurationError)
     end
 
+    it "evicts at 10 x each source's TTL by default" do
+      cfg = described_class.new(env: {})
+      expect(cfg.default_evict_after).to be_nil
+      expect(cfg.evict_after).to eq({})
+      expect(cfg.evict_after_for(:nhl)).to eq(36_000)
+      expect(cfg.evict_after_for(:espn)).to eq(9_000)
+      expect(cfg.evict_after_for(:nflverse)).to eq(864_000)
+      expect(cfg.evict_after_for(:nhl, ttl: 60)).to eq(600)
+    end
+
+    it "falls back to default_ttl for a source with a TTL of 0" do
+      config.ttls = {nhl: 0}
+      expect(config.evict_after_for(:nhl)).to eq(10 * config.default_ttl)
+    end
+
+    it "takes a per-source age over the default, and nil to unset either" do
+      config.default_evict_after = "600"
+      config.evict_after = {"espn" => 60}
+      expect(config.evict_after_for(:espn)).to eq(60)
+      expect(config.evict_after_for(:nhl)).to eq(600)
+
+      config.evict_after = {espn: nil}
+      config.default_evict_after = nil
+      expect(config.evict_after_for(:espn)).to eq(9_000)
+    end
+
+    it "rejects invalid eviction ages" do
+      expect { config.default_evict_after = -1 }.to raise_error(SportsIngest::ConfigurationError)
+      expect { config.evict_after = {nhl: "later"} }.to raise_error(SportsIngest::ConfigurationError)
+      expect { config.evict_after = [] }.to raise_error(SportsIngest::ConfigurationError)
+    end
+
     it "keeps the raw cache on disk by default and accepts memory or off" do
       expect(described_class.new(env: {}).raw_cache).to eq(:disk)
       config.raw_cache = "off"
       expect(config.raw_cache).to eq(:off)
       expect { config.raw_cache = :redis }.to raise_error(SportsIngest::ConfigurationError)
       expect { config.raw_cache = nil }.to raise_error(SportsIngest::ConfigurationError)
+    end
+
+    it "keeps the processed cache on disk by default and accepts memory or off" do
+      expect(described_class.new(env: {}).processed_cache).to eq(:disk)
+      config.processed_cache = :memory
+      expect(config.processed_cache).to eq(:memory)
+      expect(config.to_h[:processed_cache]).to eq(:memory)
+      expect { config.processed_cache = "redis" }.to raise_error(SportsIngest::ConfigurationError, /processed_cache/)
     end
 
     it "rejects a blank cache dir or user agent" do

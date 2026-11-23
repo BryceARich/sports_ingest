@@ -5,7 +5,8 @@ module SportsIngest
   #
   # The table ships with the gem as Ruby data ({Teams::Hockey::ROWS}): the NHL's
   # team IDs, tri-codes, names, conferences and divisions, colors, plus the codes and IDs that
-  # Evolving-Hockey, PuckPedia and ESPN use for each team. It lives in core so every source can
+  # ESPN, the advanced-stats provider (+:advanced_stats+, Evolving-Hockey today) and the salary
+  # cap source (+:salary_cap+) use for each team. It lives in core so every source can
   # resolve teams without loading another source.
   #
   # Codes and names match loosely: case, accents, spaces and punctuation are ignored, so

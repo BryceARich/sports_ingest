@@ -29,4 +29,7 @@ Gem::Specification.new do |spec|
 
   # Core stays free of native extensions so it installs cleanly on a Raspberry Pi.
   spec.add_dependency "zeitwerk", "~> 2.6"
+
+  # Pure Ruby; a bundled (not default) gem since Ruby 3.4. Loaded only by advanced_hockey (ADR 0044).
+  spec.add_dependency "csv", "~> 3.3"
 end

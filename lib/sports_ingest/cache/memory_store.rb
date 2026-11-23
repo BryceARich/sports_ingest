@@ -37,6 +37,11 @@ module SportsIngest
         @mutex.synchronize { @entries.delete(key) }
       end
 
+      # @return [Array<String>] every entry's key
+      def keys
+        @mutex.synchronize { @entries.keys }
+      end
+
       # Removes every entry.
       #
       # @return [void]

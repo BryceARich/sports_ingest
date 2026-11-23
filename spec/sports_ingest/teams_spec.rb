@@ -16,7 +16,7 @@ RSpec.describe SportsIngest::Teams do
       .to eq("Atlantic" => 8, "Metropolitan" => 8, "Central" => 8, "Pacific" => 8)
   end
 
-  %i[nhl evolving_hockey puckpedia espn].each do |source|
+  %i[nhl advanced_stats salary_cap espn].each do |source|
     it "resolves all 32 teams from their #{source} codes" do
       teams.each do |team|
         expect(team.codes_for(source)).not_to be_empty, "#{team.tri_code} has no #{source} code"
@@ -33,7 +33,7 @@ RSpec.describe SportsIngest::Teams do
       "TBL" => ["T.B", "TB"], "NJD" => ["N.J", "NJ"], "LAK" => ["L.A", "LA"],
       "SJS" => ["S.J", "SJ"], "UTA" => ["UTA", "UTAH"]
     }.each do |tri_code, (eh, espn)|
-      expect(described_class.fetch(eh, source: :evolving_hockey).tri_code).to eq(tri_code)
+      expect(described_class.fetch(eh, source: :advanced_stats).tri_code).to eq(tri_code)
       expect(described_class.fetch(espn, source: :espn).tri_code).to eq(tri_code)
     end
   end

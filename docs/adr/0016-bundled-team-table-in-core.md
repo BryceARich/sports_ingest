@@ -19,14 +19,18 @@ Teams change rarely: a relocation or rename every few years.
 
 ## Decision
 
-We will ship the table with the gem as Ruby data, `SportsIngest::Teams::Hockey::ROWS` (one hash per team), and
-read it through `SportsIngest::Teams` in core, which every source can use.
+We will ship the table with the gem as Ruby data, `SportsIngest::Teams::Hockey::ROWS` (one hash
+per team), and read it through `SportsIngest::Teams` in core, which every source can use.
 
 - Each row becomes a `SportsIngest::Team` model: the NHL team ID (a String, as in
   [ADR 0026](0026-canonical-id-scheme.md)) and tri-code, full, place and common names,
   conference, division, primary and secondary colors (`#RRGGBB`), `source_ids` (ESPN's team ID,
-  which is the fantasy API's `proTeamId`) and `codes` per source (`:evolving_hockey`,
-  `:puckpedia`, `:espn`). The NHL's ID and tri-code are filled in as the `:nhl` entries.
+  which is the fantasy API's `proTeamId`) and `codes` per source (`:advanced_stats`,
+  `:salary_cap`, `:espn`). The NHL's ID and tri-code are filled in as the `:nhl` entries.
+- Licensed providers are keyed by **role**, not by name: `:advanced_stats` holds the
+  advanced-stats provider's codes (Evolving-Hockey today, hence `T.B`), `:salary_cap` the salary
+  cap source's (PuckPedia was the first, but it is likely to be replaced). Swapping a provider
+  means editing its codes, not renaming a source across the gem and its callers.
 - `Teams.find(code, source: nil)` matches loosely (case, spaces, punctuation and accents ignored,
   so `T.B`, `TB` and `tb` are one key) against any source's codes and the full name, or only one
   source's codes when `source:` is given. `Teams.fetch` raises `NotFound` instead of returning
@@ -47,23 +51,27 @@ so older seasons' codes don't resolve yet.
   give most of the freshness check without the cost.
 - **Put the table in `SportsIngest::NHL`.** It's NHL data, but ESPN and advanced-hockey code
   would then have to load the NHL module, which ADR 0009 forbids.
-- **A JSON file instead of a Ruby constant.** Easier for other languages to read, but
-  `script/licensed-data-guard` scans data files (`.json` among them) for the words
-  "Evolving-Hockey" and "PuckPedia", which the table's source keys contain. Ruby code is exempt by
-  design, so a constant keeps the guard strict without an allow-list entry for the gem's own code.
+- **A JSON file instead of a Ruby constant.** Easier for other languages to read, but it needs
+  its own read-and-parse path, and `script/licensed-data-guard` scans `.json` files for provider
+  names, so a note naming a provider would trip it. A constant is autoloaded like the rest of the
+  gem.
+- **Key licensed providers by name (`:evolving_hockey`, `:puckpedia`).** Matches the
+  `PlayerRef` examples, but the cap source in particular is expected to change, and a name baked
+  into callers (`source: :puckpedia`) would have to change with it.
 - **Strict, exact code matching.** Simpler, but every source would need each spelling listed
   (`T.B`, `TB`, `t.b`). Normalizing collapses those, and the collision check keeps it safe.
-- **Include historical teams now.** Useful for old EH seasons, but it needs a validity range per
+- **Include historical teams now.** Useful for old advanced-stats seasons, but it needs a validity range per
   code (`ARI` until 2024) and isn't part of this issue's 32-team scope.
 
 ## Consequences
 
 - Any source can resolve a team code with `SportsIngest::Teams.fetch(code)`, without loading
   another source.
-- When a team relocates or is renamed, someone edits that team's row in `lib/sports_ingest/teams/hockey.rb` and re-records the two NHL
-  cassettes; the specs fail until both agree.
-- PuckPedia's codes are recorded as the NHL tri-codes. The current PuckPedia export has no team
-  column, so this is unverified; the PuckPedia importer should confirm it.
+- When a team relocates or is renamed, someone edits that team's row in `lib/sports_ingest/teams/hockey.rb` and
+  re-records the two NHL cassettes; the specs fail until both agree.
+- The `:salary_cap` codes are recorded as the NHL tri-codes, unverified: the current cap export
+  has no team column. Whichever cap source is used should confirm or replace them.
+- When the advanced-stats or cap provider changes, update that role's codes in the table.
 - Colors are for display, not an official source; they come from the teams' published brand
   colors.
 - Historical team codes need a follow-up if old seasons are imported.

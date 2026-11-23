@@ -32,7 +32,7 @@ module SportsIngest
       # @return [Hash, nil] the entry, or +nil+ if there is none or its file is unreadable
       # @raise [ConfigurationError] if +key+ isn't a safe relative path
       def read(key)
-        JSON.parse(path_for(key).read)
+        JSON.parse(path_for(key).read(encoding: Encoding::UTF_8))
       rescue Errno::ENOENT, Errno::EISDIR, JSON::ParserError, EncodingError
         nil
       end
@@ -58,6 +58,15 @@ module SportsIngest
       # @raise [ConfigurationError] if +key+ isn't a safe relative path
       def delete(key)
         FileUtils.rm_f(path_for(key))
+      end
+
+      # Every entry's key, found by listing the +.json+ files under {#dir}.
+      #
+      # @return [Array<String>] keys in no particular order; empty if {#dir} doesn't exist
+      def keys
+        Dir.glob("**/*.json", base: dir.to_s)
+          .map { |path| path.delete_suffix(".json") }
+          .select { |key| KEY_FORMAT.match?(key) }
       end
 
       # Removes every entry, by deleting {#dir}.

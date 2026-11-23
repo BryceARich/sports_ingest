@@ -12,6 +12,7 @@ module SportsIngest
   #   team.tri_code              # => "TBL"
   #   team.division              # => "Atlantic"
   #   team.codes_for(:espn)      # => ["TB"]
+  #   team.codes_for(:advanced_stats) # => ["T.B"]
   #   team.source_id(:espn)      # => "20"
   #   team.colors[:primary]      # => "#002868"
   Team = Model.define(:sport, :id, :tri_code, :name, :place_name, :common_name, :conference,
@@ -89,7 +90,7 @@ module SportsIngest
 
     # This team's codes in one source.
     #
-    # @param source [Symbol, String] a source name, such as +:evolving_hockey+
+    # @param source [Symbol, String] a source name, such as +:advanced_stats+
     # @return [Array<String>] the codes; empty if the table has none for that source
     def codes_for(source)
       codes.fetch(source.to_sym, [])
