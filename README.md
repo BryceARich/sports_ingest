@@ -45,6 +45,15 @@ Each source loads on its own, with core but no other source:
 require "sports_ingest/nhl" # SportsIngest::NHL, nothing from ESPN, nflverse or CSV
 ```
 
+Teams resolve from any source's code, in core:
+
+```ruby
+team = SportsIngest::Teams.fetch("T.B")    # Evolving-Hockey's code; "TBL", "TB" work too
+team.tri_code                              # => "TBL"
+team.division                              # => "Atlantic"
+SportsIngest::Teams.find("UTAH", source: :espn).name # => "Utah Mammoth"
+```
+
 ## Development
 
 Ruby is pinned in `.ruby-version` and installed with [mise](https://mise.jdx.dev).
