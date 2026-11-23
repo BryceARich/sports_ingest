@@ -1,8 +1,10 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Starts a headless Claude Code session, in its own git worktree, for each ready issue.
+# Starts a headless Claude Code session (`claude -p`), in its own git worktree, for each ready issue.
 # Run it from your terminal after merging a PR. It uses no Claude tokens until the sessions start.
+# Headless sessions don't show in the Claude desktop app and can't use Remote Control; for those,
+# run `/spawn-unblocked` in the app instead. Needs the `claude` CLI, logged in (`claude`, `/login`).
 #
 #   script/claude/spawn-unblocked              # start up to 3
 #   script/claude/spawn-unblocked 5            # start up to 5
@@ -19,7 +21,7 @@ ALLOWED_TOOLS = %w[
 max = (ARGV.find { |a| a =~ /\A\d+\z/ } || 3).to_i
 dry_run = ARGV.include?("--dry-run") || ARGV.include?("dry-run")
 
-abort "error: the `claude` CLI isn't on your PATH" unless dry_run || system("command -v claude >/dev/null 2>&1")
+abort "error: the `claude` CLI isn't on your PATH (or run /spawn-unblocked in the desktop app)" unless dry_run || system("command -v claude >/dev/null 2>&1")
 
 main = main_clone
 run("git", "-C", main, "fetch", "--quiet", "origin", "main", "--prune")
