@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
+# Install Ruby from .ruby-version with mise, then the gems. Safe to run again.
 set -euo pipefail
 IFS=$'\n\t'
-set -vx
 
+if ! command -v mise >/dev/null; then
+  echo "mise not found. Install it first: see docs/RESUME.md, \"10-minute setup\"." >&2
+  exit 1
+fi
+
+# mise ignores .ruby-version until ruby is in idiomatic_version_file_enable_tools (default: []).
+# This adds it to your global mise settings once; .ruby-version stays the only place Ruby is pinned.
+if ! mise settings get idiomatic_version_file_enable_tools | grep -q '"ruby"'; then
+  mise settings add idiomatic_version_file_enable_tools ruby
+fi
+
+set -vx
 mise install
-bundle install
+mise exec -- bundle install

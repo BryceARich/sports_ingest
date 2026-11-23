@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # script/claude/* parses gh output with JSON.parse, which crashes when Ruby reads it as US-ASCII.
+  LANG: C.UTF-8
+  LC_ALL: C.UTF-8
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS (Intel)
+            os: macos-15-intel
+          - name: Ubuntu (ARM64)
+            os: ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version-file: .ruby-version
+          bundler-cache: true
+      - name: Specs
+        run: bundle exec rspec
+      - name: Lint
+        if: ${{ !cancelled() }}  # report lint even when specs fail
+        run: bundle exec rubocop

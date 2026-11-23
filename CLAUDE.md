@@ -89,7 +89,8 @@ never committed), so each contributor uses their own and no account names live i
 - **Commits** as the bot: `git -c user.name=<bot-login> -c user.email=<bot-email> commit ...`
 - **Pushes:** to the bot's remote, never `origin`: `git push -u bot <branch>`.
 - **Access:** the bot needs write access to the repo and to the project board, and a token with
-  `repo`, `project` and `read:org`. Keep the token to those scopes. When it expires, renew it with
+  `repo`, `project`, `read:org` and `workflow` (needed to push changes under `.github/workflows/`).
+  Keep the token to those scopes. When it expires, renew it with
   `pbpaste | gh auth login --hostname github.com --with-token`, then `gh auth switch` back to yourself.
 
 ## The licensed-data rule
