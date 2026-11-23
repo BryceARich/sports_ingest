@@ -46,6 +46,15 @@ Each source loads on its own, with core but no other source:
 require "sports_ingest/nhl" # SportsIngest::NHL, nothing from ESPN, nflverse or CSV
 ```
 
+Teams resolve from any source's code, in core:
+
+```ruby
+team = SportsIngest::Teams.fetch("T.B")    # the advanced-stats code; "TBL", "TB" work too
+team.tri_code                              # => "TBL"
+team.division                              # => "Atlantic"
+SportsIngest::Teams.find("UTAH", source: :espn).name # => "Utah Mammoth"
+```
+
 ### Evolving-Hockey skater GAR
 
 Download EH's skater GAR table as CSV (`EH_gar_sk_stats_regular_<date>.csv`) into a folder

@@ -3,7 +3,8 @@
 - **Module:** `sports_ingest/nhl` (M2)
 - **Last verified:** 2026-11-22: every endpoint below returned 200 with the expected top-level
   keys, by hand with `curl`, during the 2026-27 regular season. The stats `skater/summary`
-  call was also recorded as a fixture on 2026-11-22 (`spec/fixtures/cassettes/nhl/`).
+  call, `/standings/2026-11-22` and the stats `/team` list were also recorded as fixtures on
+  2026-11-22 (`spec/fixtures/cassettes/nhl/`).
 - **Default raw-cache TTL:** 3600 seconds (`SPORTS_INGEST_TTL_NHL`); live-game calls will want far
   less (the polling helper, M2-10).
 
@@ -22,7 +23,7 @@ Two public hosts, neither documented by the NHL. Both sit behind Cloudflare.
 | `/gamecenter/{gameId}/landing` | game summary | M2-04 |
 | `/gamecenter/{gameId}/boxscore` | box score | M2-04 |
 | `/gamecenter/{gameId}/play-by-play` | every event, including goals with strength and assists | M2-05 |
-| `/standings/{YYYY-MM-DD}` | standings as of that date | M2-06 |
+| `/standings/{YYYY-MM-DD}` | standings as of that date; also checks the team table's codes, names, conference and division | M2-06, M2-01 |
 | `/roster/{TEAM}/{season}` | current roster by position | M2-07 |
 | `/player/{playerId}/landing` | bio, career totals, last games | M2-08 |
 | `/player/{playerId}/game-log/{season}/{gameType}` | game log; `gameType` 2 = regular season, 3 = playoffs | M2-08 |
@@ -33,6 +34,7 @@ Two public hosts, neither documented by the NHL. Both sit behind Cloudflare.
 |---|---|---|
 | `/skater/summary?cayenneExp=...` | skater season totals | M2-09 |
 | `/goalie/summary?cayenneExp=...` | goalie season totals | M2-09 |
+| `/team` | every team the NHL has had: `id`, `triCode`, `fullName`, `franchiseId`; checks the team table's IDs | M2-01 |
 
 Filter with `cayenneExp`, e.g. `seasonId=20252026 and gameTypeId=2` (URL-encoded). Page with
 `start` and `limit`, sort with `sort`; the response is `{"data": [...], "total": N}`.
@@ -68,6 +70,9 @@ seconds at most while live.
   `total` and page with `start`.
 - **Stats REST without `cayenneExp`** returns `500` (`Exception processing Agrest request`). A
   malformed `cayenneExp` returns the same message. Treat both as a request bug, not an outage.
+- **The stats `/team` list keeps old teams under current tri-codes.** `UTA` is both 59 (Utah
+  Hockey Club) and 68 (Utah Mammoth, the current one). Take current IDs from game or schedule
+  payloads (`homeTeam.id`), or from `SportsIngest::Teams`, not by tri-code from `/team`.
 - **Unknown IDs return `404`** (e.g. `/player/1/landing`); map that to `SportsIngest::NotFound`.
 - **Shapes change between seasons** without notice. Re-record fixtures at the start of each
   season and update the date above.

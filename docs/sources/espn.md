@@ -22,6 +22,10 @@ Base: `https://lm-api-reads.fantasy.espn.com/apis/v3/games/{game}`, where `game`
 `view` values come up per issue (`mSettings`, `mTeam`, `mRoster`, `mDraftDetail`, ...); add each one
 here with what it returns when an adapter starts using it.
 
+Players carry a `proTeamId` (0 means free agent). It's ESPN's team ID, and maps to a team through
+`SportsIngest::Teams.find_by_source_id(:espn, id)`; checked against the player pool on 2026-11-22.
+ESPN's abbreviations differ from the NHL's for `LA`, `NJ`, `SJ`, `TB` and `UTAH`.
+
 The `X-Fantasy-Filter` header is JSON, e.g. `{"players":{"limit":50}}`; M4-01 builds it.
 
 ```bash
