@@ -21,7 +21,7 @@ flowchart LR
 
     subgraph core["Core (sports_ingest)"]
         http["HTTP client<br/>timeouts, retries, rate limits"]
-        raw[("Raw cache<br/>memory / disk / off<br/>TTL per source, stale on error")]
+        raw[("Raw cache<br/>memory / disk / off<br/>TTL per source, stale on error,<br/>evicted at 10 × TTL")]
     end
 
     subgraph adapters["Adapters (one module per source)"]
@@ -65,7 +65,7 @@ What each layer does:
 |---|---|---|
 | **Sources** | External systems we read from. | — (we don't control them) |
 | **HTTP client** (M1-05) | The only way out to the network: timeouts, retry with backoff on 429/5xx, per-host rate limits, user agent, gzip. Knows nothing about caching; `Cache::Raw` wraps it. | Know anything about a source's payload shape. |
-| **Raw cache** (M1-06) | `Cache::Raw` wraps the HTTP client: stores responses keyed by request in memory, on disk or not at all, with a TTL per source; serves a stale copy (`stale: true`, original `fetched_at`) when the network fails ([ADR 0009](adr/0009-raw-cache-stores-and-stale-on-error.md)). | Hold licensed data (it never goes over HTTP). |
+| **Raw cache** (M1-06) | `Cache::Raw` wraps the HTTP client: stores responses keyed by request in memory, on disk or not at all, with a TTL per source; serves a stale copy (`stale: true`, original `fetched_at`) when the network fails ([ADR 0009](adr/0009-raw-cache-stores-and-stale-on-error.md)); evicts entries past 10 × TTL on read and in an hourly sweep ([ADR 0081](adr/0081-raw-cache-eviction.md)). | Hold licensed data (it never goes over HTTP). |
 | **Adapters** | One per source. Turn raw payloads or imported files into models. Raise only `SportsIngest::Error` subclasses (M1-09), and `SourceChangedError` when a payload's shape is unexpected. | Call `Net::HTTP` directly, or load another source's code. |
 | **Models** (M1-08) | Immutable value objects with `to_h` / `to_json` / `from_h` and a schema version. Players carry a `PlayerRef` with the canonical ID plus per-source IDs. | Do I/O. |
 | **Crosswalk** (M3) | Maps each source's player IDs to the canonical ID: normalizer, tiered matcher, manual overrides, persisted JSON map. | Re-run fuzzy matching for a player that is already resolved. |
@@ -123,7 +123,8 @@ Loading rules (M1-03):
    one, and the source to `spec/sports_ingest/modular_loading_spec.rb` so it proves no other
    source is loaded.
 4. **Configuration.** Add the source's default TTL to `Configuration::DEFAULT_TTLS` (its
-   `SPORTS_INGEST_TTL_<SOURCE>` env var then works on its own) and any secrets as
+   `SPORTS_INGEST_TTL_<SOURCE>` env var then works on its own, and the eviction age defaults to
+   10 × that TTL) and any secrets as
    `SportsIngest::Secret` settings ([ADR 0010](adr/0010-configuration-and-secrets.md)), which keeps
    them out of `inspect` and logs. Scrub them from cassettes too.
 5. **Adapter.** Fetch through the shared HTTP client (never `Net::HTTP`), or read user-supplied files

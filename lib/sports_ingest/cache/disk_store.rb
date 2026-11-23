@@ -60,6 +60,15 @@ module SportsIngest
         FileUtils.rm_f(path_for(key))
       end
 
+      # Every entry's key, found by listing the +.json+ files under {#dir}.
+      #
+      # @return [Array<String>] keys in no particular order; empty if {#dir} doesn't exist
+      def keys
+        Dir.glob("**/*.json", base: dir.to_s)
+          .map { |path| path.delete_suffix(".json") }
+          .select { |key| KEY_FORMAT.match?(key) }
+      end
+
       # Removes every entry, by deleting {#dir}.
       #
       # @return [void]

@@ -31,6 +31,15 @@ RSpec.describe SportsIngest::Cache::DiskStore do
     expect(store.read("nhl/bad")).to be_nil
   end
 
+  it "lists keys, skipping temp files" do
+    expect(store.keys).to eq([])
+    store.write("nhl/ab/abc", {})
+    store.write("espn/x", {})
+    File.write(File.join(dir, "nhl/ab/abc.1234.tmp"), "")
+
+    expect(store.keys).to contain_exactly("nhl/ab/abc", "espn/x")
+  end
+
   it "deletes and clears" do
     store.write("nhl/a", {})
     store.write("nhl/b", {})
