@@ -47,6 +47,7 @@ bundle exec rake fixtures:record      # re-record fixtures against live sources 
 bundle exec rake changelog:check adr:check   # fragments parse, ADR index rows are right (CI runs this)
 bundle exec rake changelog:preview    # the release section the fragments would make
 bundle exec rake release:prepare[x.y.z]  # at release: compile fragments into CHANGELOG.md, rewrite the ADR index
+script/licensed-data-guard --all      # check tracked files for EH / PuckPedia data (M1-11)
 ```
 
 ## Code conventions
@@ -111,7 +112,8 @@ Evolving-Hockey and PuckPedia data is licensed to the user personally. **It neve
 - Don't add code that scrapes or auto-downloads from EH or PuckPedia. Input is manually exported
   files, until an ADR (M6-09) says otherwise.
 - If you see a file that looks like a real export staged for commit, stop and say so.
-  The pre-commit hook and CI check from M1-11 enforce this, but don't rely on them.
+  `script/licensed-data-guard` enforces this as a pre-commit hook (`bin/setup` turns it on) and in
+  CI (ADR 0014), but it's a heuristic: don't rely on it.
 
 ## Working on an issue
 

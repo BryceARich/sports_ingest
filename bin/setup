@@ -14,6 +14,9 @@ if ! mise settings get idiomatic_version_file_enable_tools | grep -q '"ruby"'; t
   mise settings add idiomatic_version_file_enable_tools ruby
 fi
 
+# Pre-commit hook that blocks Evolving-Hockey and PuckPedia exports (ADR 0014).
+git config core.hooksPath .githooks
+
 set -vx
 mise install
 mise exec -- bundle install

@@ -28,6 +28,7 @@ the full rules are in [`CLAUDE.md`](CLAUDE.md), and setup is in [`docs/RESUME.md
 - Keep commits focused. Don't mix formatting-only changes with behavior changes.
 - Never commit secrets (`espn_s2`, `SWID`) or Evolving-Hockey / PuckPedia data, including caches
   or snapshots derived from them. See "The licensed-data rule" in [`CLAUDE.md`](CLAUDE.md).
+  Run `bin/setup` once so the pre-commit hook blocks likely exports (ADR 0014).
 
 ## Pull requests
 

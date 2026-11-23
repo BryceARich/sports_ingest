@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks commits of files that look like Evolving-Hockey or PuckPedia exports (ADR 0014).
+# bin/setup turns this on with `git config core.hooksPath .githooks`.
+exec ruby "$(dirname "$0")/../script/licensed-data-guard" --staged

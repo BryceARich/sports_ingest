@@ -1,0 +1,61 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Refuses files that look like Evolving-Hockey or PuckPedia exports (ADR 0005, ADR 0014).
+#
+#   script/licensed-data-guard              # staged files (the pre-commit hook)
+#   script/licensed-data-guard --all        # every tracked file
+#   script/licensed-data-guard --range A..B # every file added or changed in commits A..B (CI)
+#   script/licensed-data-guard PATH...      # these files on disk
+#
+# Exits 1 and lists the files when any look like licensed data. Hand-made fixtures with invented
+# values belong in spec/fixtures/advanced_hockey/, which is allowed.
+require "open3"
+require_relative "lib/licensed_data_guard"
+
+def git(*args)
+  out, err, status = Open3.capture3("git", *args, binmode: true)
+  abort "licensed-data-guard: git #{args.first} failed: #{err.strip}" unless status.success?
+  out
+end
+
+def paths(out)
+  out.split("\0").reject(&:empty?).map { |p| p.dup.force_encoding(Encoding::UTF_8) }
+end
+
+# Yields [label, path, content] for each file to check.
+def each_file(argv)
+  case argv.first
+  when nil, "--staged"
+    paths(git("diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z")).each do |path|
+      yield path, path, git("show", ":#{path}")
+    end
+  when "--all"
+    paths(git("ls-files", "-z")).each do |path|
+      yield path, path, (File.file?(path) ? File.binread(path) : nil)
+    end
+  when "--range"
+    range = argv[1] || abort("usage: licensed-data-guard --range <base>..<head>")
+    git("rev-list", range).split.each do |commit|
+      files = git("diff-tree", "--root", "--no-commit-id", "-r", "--name-only", "--diff-filter=ACMR", "-z", commit)
+      paths(files).each { |path| yield "#{path} (#{commit[0, 9]})", path, git("show", "#{commit}:#{path}") }
+    end
+  else
+    argv.each { |path| yield path, path, (File.file?(path) ? File.binread(path) : nil) }
+  end
+end
+
+found = []
+each_file(ARGV) do |label, path, content|
+  reasons = LicensedDataGuard.violations(path, content)
+  found << [label, reasons] unless reasons.empty?
+end
+exit if found.empty?
+
+warn "licensed-data-guard: these files look like Evolving-Hockey or PuckPedia data,"
+warn "which must never be committed (CLAUDE.md, ADR 0005):"
+found.each { |label, reasons| warn "  #{label}: #{reasons.join("; ")}" }
+warn ""
+warn "Keep real exports outside the repo. Fixtures with invented values go in"
+warn "#{LicensedDataGuard::ALLOWED_PREFIXES.join(", ")}. Unstage with: git restore --staged <file>"
+exit 1
