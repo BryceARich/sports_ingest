@@ -12,6 +12,7 @@ module SportsIngest
   # |---|---|---|
   # | {#cache_dir} | +SPORTS_INGEST_CACHE_DIR+ | +$XDG_CACHE_HOME/sports_ingest+, else +~/.cache/sports_ingest+ |
   # | {#user_agent} | +SPORTS_INGEST_USER_AGENT+ | +sports_ingest/<version> (+<homepage>)+ |
+  # | {#raw_cache} | +SPORTS_INGEST_RAW_CACHE+ (+disk+, +memory+ or +off+) | +:disk+ |
   # | {#default_ttl} | +SPORTS_INGEST_TTL+ | 3600 seconds |
   # | {#ttl_for}(source) | +SPORTS_INGEST_TTL_<SOURCE>+, e.g. +SPORTS_INGEST_TTL_NHL+ | {DEFAULT_TTLS} |
   # | {#espn_s2} | +SPORTS_INGEST_ESPN_S2+ | none |
@@ -48,6 +49,10 @@ module SportsIngest
     #   per-user cache directory outside any repository.
     attr_reader :cache_dir
 
+    # @return [Symbol] where the raw HTTP cache keeps responses: +:disk+ (under {#cache_dir}),
+    #   +:memory+ (for the life of the process) or +:off+
+    attr_reader :raw_cache
+
     # @return [String] +User-Agent+ header sent with every HTTP request
     attr_reader :user_agent
 
@@ -71,6 +76,7 @@ module SportsIngest
       self.cache_dir = default_cache_dir(env)
       self.user_agent = "sports_ingest/#{VERSION} (+https://github.com/BryceARich/sports_ingest)"
       self.default_ttl = DEFAULT_TTL
+      self.raw_cache = :disk
       @espn_s2 = nil
       @espn_swid = nil
       load_env(env)
@@ -96,6 +102,20 @@ module SportsIngest
       raise ConfigurationError, "user_agent must not be blank" if value.nil? || value.to_s.strip.empty?
 
       @user_agent = value.to_s.dup.freeze
+    end
+
+    # @param mode [Symbol, String] +:disk+, +:memory+ or +:off+
+    # @return [void]
+    # @raise [ConfigurationError] for any other value
+    # @example
+    #   config.raw_cache = :memory # nothing written to disk, e.g. in a short-lived script
+    def raw_cache=(mode)
+      value = mode.to_s.strip.downcase.to_sym if mode.is_a?(Symbol) || mode.is_a?(String)
+      unless Cache::MODES.include?(value)
+        raise ConfigurationError, "raw_cache must be one of #{Cache::MODES.join(", ")}, got #{mode.inspect}"
+      end
+
+      @raw_cache = value
     end
 
     # @param seconds [Integer, String] TTL for sources with no TTL of their own
@@ -176,6 +196,7 @@ module SportsIngest
       {
         cache_dir: cache_dir.to_s,
         user_agent: user_agent,
+        raw_cache: raw_cache,
         default_ttl: default_ttl,
         ttls: ttls,
         espn_s2: espn_s2&.to_s,
@@ -215,6 +236,7 @@ module SportsIngest
 
       read.call("CACHE_DIR")&.then { |v| self.cache_dir = v }
       read.call("USER_AGENT")&.then { |v| self.user_agent = v }
+      read.call("RAW_CACHE")&.then { |v| self.raw_cache = v }
       read.call("TTL")&.then { |v| self.default_ttl = v }
       read.call("ESPN_S2")&.then { |v| self.espn_s2 = v }
       read.call("ESPN_SWID")&.then { |v| self.espn_swid = v }

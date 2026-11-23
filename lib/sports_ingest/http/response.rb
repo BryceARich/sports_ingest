@@ -13,7 +13,25 @@ module SportsIngest
     #     charset, binary otherwise
     # @!attribute [r] url
     #   @return [String] the URL that answered, after any redirects
-    Response = Data.define(:status, :headers, :body, :url) do
+    # @!attribute [r] fetched_at
+    #   @return [Time] when the response came from the network; older for one served from the raw
+    #     cache ({Cache::Raw})
+    # @!attribute [r] stale
+    #   @return [Boolean] +true+ if {Cache::Raw} served this past its TTL because the network failed
+    Response = Data.define(:status, :headers, :body, :url, :fetched_at, :stale) do
+      # @param status [Integer] the HTTP status
+      # @param headers [Hash{String => String}] response headers, with lowercase names
+      # @param body [String] the decoded body
+      # @param url [String] the URL that answered
+      # @param fetched_at [Time] when it came from the network; now by default
+      # @param stale [Boolean] whether it's a stale copy served on a network failure
+      def initialize(status:, headers:, body:, url:, fetched_at: Time.now, stale: false)
+        super
+      end
+
+      # @return [Boolean] whether this is a stale copy served because the network failed
+      def stale? = stale
+
       # Looks up a header by name, ignoring case.
       #
       # @param name [String] the header name, e.g. "Content-Type"
