@@ -1,8 +1,9 @@
 # Evolving-Hockey and PuckPedia
 
 - **Module:** `sports_ingest/advanced_hockey` (M6)
-- **Last verified:** 2026-11-23, skater GAR (both groupings, 2026-27 regular season). Goalie GAR,
-  projections and PuckPedia: not yet; their importers update this line.
+- **Last verified:** 2026-11-23, skater GAR (both groupings, 2026-27 regular season). Goalie GAR
+  (its header row, from the maintainer's export; no data checked against a live export here).
+  Projections and PuckPedia: not yet; their importers update this line.
 - **Default raw-cache TTL:** none; these are local files, not HTTP.
 
 **Licensed data.** Both subscriptions are licensed to the maintainer personally. Exports, and
@@ -49,11 +50,26 @@ None. Input is files the user exports by hand and drops into a local folder outs
 | Export | Importer | Issue |
 |---|---|---|
 | EH skater GAR table | `SkaterGarImport` | M6-01 |
-| EH goalie GAR table | goalie GAR import | M6-02 |
+| EH goalie GAR table | `GoalieGarImport` | M6-02 |
 | EH GAR projections | projections import | M6-03 |
 | PuckPedia cap hits (CSV) | contract import | M6-04 |
 
 Each importer adds its export's columns, file naming and an example row (invented values) here.
+
+### EH goalie GAR
+
+Export the goalie GAR table as CSV (season or team-and-season grouping) into a folder outside the
+repo. Columns: `Player, Season, Team, Position, GP, TOI EV, TOI SH, FA EV, FA SH, EVD, SHD, Take,
+Draw, GAR, WAR, SPAR`. Season and team-grouped exports both import:
+
+```ruby
+require "sports_ingest/advanced_hockey"
+include SportsIngest::AdvancedHockey
+
+rows = GoalieGarImport.read("~/hockey/goalie_gar.csv")
+rows.first.toi_ev # => 1180.5
+GoalieGar.combine(rows) # one row per goalie and season
+```
 
 ### EH skater GAR
 
