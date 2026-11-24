@@ -32,6 +32,7 @@ module SportsIngest
 
       # Reasons, with the confidence each one gives.
       REASONS = {
+        override: :exact,
         source_id: :exact,
         name_and_birth_date: :high,
         name_position_team: :medium,

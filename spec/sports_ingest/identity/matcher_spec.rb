@@ -113,6 +113,61 @@ RSpec.describe SportsIngest::Identity::Matcher do
     end
   end
 
+  describe "manual overrides (ADR 0029)" do
+    let(:overrides) do
+      SportsIngest::Identity::Overrides.new([
+        {source: "evolving_hockey", source_id: "ELIAS.PETTERSSON2", canonical_id: "8483678"},
+        {source: "puckpedia", source_name: "Sebastian Aho", canonical_id: "8478427"}
+      ])
+    end
+    let(:matcher) { described_class.new([pettersson_c, pettersson_d, aho_car, aho_nyi, stutzle], overrides: overrides) }
+
+    it "beats an automatic match that conflicts with it" do
+      # Birth date says the centre, but the source ID says the defenceman.
+      match = matcher.match(source: :evolving_hockey, id: "ELIAS.PETTERSSON2", name: "Elias Pettersson",
+        birth_date: "1998-11-12", position: "C", team: "VAN")
+
+      expect([match.ref.canonical_id, match.confidence, match.reason]).to eq(["8483678", :exact, :override])
+      expect(match.ref.source_id(:evolving_hockey)).to eq("ELIAS.PETTERSSON2")
+    end
+
+    it "applies a name override to records without an ID, whatever their position or team" do
+      match = matcher.match(source: :puckpedia, name: "Sebastian Aho", position: "D", team: "NYI")
+
+      expect([match.ref.canonical_id, match.reason]).to eq(["8478427", :override])
+    end
+
+    it "takes precedence over the source's own ID" do
+      other = SportsIngest::Identity::Overrides.new([
+        {source: "espn", source_id: 3900169, canonical_id: "8480222"}
+      ])
+      match = described_class.new([aho_car, aho_nyi], overrides: other).match(source: :espn, id: 3900169, name: "Sebastian Aho")
+
+      expect(match.ref.canonical_id).to eq("8480222")
+    end
+
+    it "names a player who isn't among the known players, with the source ID added" do
+      other = SportsIngest::Identity::Overrides.new([
+        {source: "evolving_hockey", source_id: "NEW.PLAYER1", canonical_id: "8999999"}
+      ])
+      match = described_class.new([stutzle], overrides: other).match(source: :evolving_hockey, id: "NEW.PLAYER1", name: "New Player")
+
+      expect([match.ref.canonical_id, match.ref.source_id(:evolving_hockey), match.reason]).to eq(["8999999", "NEW.PLAYER1", :override])
+    end
+
+    it "leaves records alone that no override covers" do
+      match = matcher.match(source: :evolving_hockey, name: "Elias Pettersson", position: "C", team: "VAN")
+
+      expect([match.ref.canonical_id, match.reason]).to eq(["8480012", :name_position_team])
+    end
+
+    it "refuses an override whose canonical ID isn't valid for the sport" do
+      bad = SportsIngest::Identity::Overrides.new([{source: "x", source_id: "A", canonical_id: "not-an-id"}])
+
+      expect { described_class.new([stutzle], overrides: bad) }.to raise_error(ArgumentError, /valid hockey canonical ID/)
+    end
+  end
+
   describe "building" do
     it "keeps a player listed twice once" do
       expect(described_class.new([stutzle, stutzle]).match(source: :x, name: "Tim Stutzle").reason).to eq(:unique_name)
