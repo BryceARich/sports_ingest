@@ -58,6 +58,29 @@ team.division                              # => "Atlantic"
 SportsIngest::Teams.find("UTAH", source: :espn).name # => "Utah Mammoth"
 ```
 
+### nflverse release files
+
+```ruby
+require "sports_ingest/nflverse"
+
+downloader = SportsIngest::Nflverse::ReleaseDownloader.new
+release = downloader.fetch("stats_player", "stats_player_week_2025.csv")
+release.path         # a local file under <cache_dir>/releases/nflverse/stats_player/
+release.last_updated # => "2026-11-22 05:12:43 EST", from the tag's timestamp.json
+```
+
+A file is downloaded once and reused until the tag's `timestamp.json` changes, which is checked at
+most once per nflverse TTL (`SPORTS_INGEST_TTL_NFLVERSE`, a day by default). Offline, the last copy
+comes back with `stale: true`. nflverse data is CC-BY-4.0: credit nflverse wherever you show it.
+
+Players and season rosters load into models keyed by `gsis_id` (ADR 0042). Rows without a `gsis_id` are
+skipped:
+
+```ruby
+SportsIngest::Nflverse::Players.new.fetch.first.id        # => "00-0033873"
+SportsIngest::Nflverse::Rosters.new.fetch(2025).first.team # => "PIT"
+```
+
 ## Development
 
 Ruby is pinned in `.ruby-version` and installed with [mise](https://mise.jdx.dev).

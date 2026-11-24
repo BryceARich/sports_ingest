@@ -48,7 +48,7 @@ Download: `https://github.com/nflverse/nflverse-data/releases/download/{tag}/{fi
 |---|---|---|
 | `stats_player` | `stats_player_week_{season}.csv`, `stats_player_reg_{season}.csv` | M5-02 |
 | `players` | `players.csv` | M5-03 |
-| `rosters` / `weekly_rosters` | per-season roster files | M5-03 |
+| `rosters` | `roster_{season}.csv` | M5-03 |
 | every tag | `timestamp.json`: `{"last_updated": "YYYY-MM-DD HH:MM:SS EST"}` | M5-01 |
 
 List a tag's assets: `https://api.github.com/repos/nflverse/nflverse-data/releases/tags/{tag}`.
@@ -88,6 +88,9 @@ so prefer the direct download URL and `timestamp.json` over listing.
   stats are under `stats_player`. Don't read `player_stats`.
 - **Season files appear as the season goes**: `stats_player_week_2026.csv` exists during the 2026
   season and grows weekly.
+- **`gsis_id` is blank for some rows** in both `players.csv` and the roster files. Those rows are
+  skipped, since they have no canonical ID (ADR 0042). Checked 2026-11-24 against `players` and
+  `rosters` (`roster_2025.csv`): the column names and the blank cells are as described.
 - Downloads follow a redirect; the HTTP client must follow it.
 
 ## Terms of use
