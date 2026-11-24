@@ -97,7 +97,7 @@ Planned layout under `lib/` (Zeitwerk autoloading, one constant per file, paths 
 | `lib/sports_ingest/advanced_hockey.rb` + `advanced_hockey/` | `SportsIngest::AdvancedHockey` (CSV imports such as `SkaterGarImport`, [ADR 0044](adr/0044-eh-tables-as-csv-with-loose-headers.md)) | `require "sports_ingest/advanced_hockey"` | M6 |
 | `lib/sports_ingest/snapshot/` | snapshot export and offline mode | core | M7 |
 | `spec/` | RSpec specs, VCR/WebMock fixtures | — | M1 |
-| `docs/sources/<source>.md` | per-source endpoints, auth, limits, quirks, terms, last verified ([index](sources/README.md)) | — | M1-12 |
+| `docs/sources/<source>.md` | per-source usage, endpoints, auth, limits, quirks, terms, last verified ([index](sources/README.md); the README only links here) | — | M1-12, M1-14 |
 
 Loading rules (M1-03):
 

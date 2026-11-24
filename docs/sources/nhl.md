@@ -13,6 +13,144 @@
 
 Two public hosts, neither documented by the NHL. Both sit behind Cloudflare.
 
+## Usage
+
+### NHL schedule
+
+```ruby
+require "sports_ingest/nhl"
+
+games = SportsIngest::NHL.schedule(date: "2026-11-23")
+game = games.first
+"#{game.away_team.tri_code} @ #{game.home_team.tri_code}" # => "CBJ @ NJD"
+game.start_time     # => 2026-11-24 00:00:00 UTC; game.date is the local date, 2026-11-23
+game.state          # => :scheduled, then :pregame, :live, :final
+
+SportsIngest::NHL.schedule(from: "2026-11-23", to: "2026-11-30", team: "TOR") # a range, one team
+SportsIngest::NHL.schedule(team: "TOR", month: "2026-11")
+SportsIngest::NHL.schedule(team: "TOR", season: 2026) # 2026-27, preseason and playoffs included
+```
+
+### NHL scores
+
+One request for all of today's games, light enough to poll from a Pi:
+
+```ruby
+scores = SportsIngest::NHL.scores # today, by the NHL's date; or scores(date: "2026-11-22")
+live = scores.find(&:live?)
+"#{live.away_team.tri_code} #{live.away_team.score} @ #{live.home_team.tri_code} #{live.home_team.score}"
+live.period         # => 1 (4 is overtime, 5 a shootout in the regular season)
+live.clock          # => "08:16"; also seconds_remaining, clock_running, in_intermission
+live.game           # => the NHL::Game, as the schedule returns it
+live.phase          # => :regulation; or :pre, :intermission, :overtime, :shootout, :final
+live.home_shots     # => 10 (shots on goal; away_shots too)
+live.power_play     # => :away, :home or nil
+live.situation&.strength(:away) # => "5v4"; also clock (penalty time left) and empty_net
+```
+
+Each is an `NHL::GameScore`. Scores stay fresh in the raw cache for 30 seconds
+(`NHL::Scoreboard::TTL`), not the hour schedules get.
+
+To decide how long to wait before reading a game again, `NHL::PollInterval` maps its phase to
+seconds (60 before the game, 10 while play is live, 30 between periods, `nil` once it's final):
+
+```ruby
+SportsIngest::NHL::PollInterval.for(live)          # => 10
+SportsIngest::NHL::PollInterval.for_phase(:final)  # => nil: stop polling
+```
+
+### NHL goals
+
+Goals from one game's play-by-play, and the ones a poll didn't have before:
+
+```ruby
+before = SportsIngest::NHL.goals(2026020378)
+# ...a few seconds later...
+after = SportsIngest::NHL.goals(2026020378)
+goal = SportsIngest::NHL.new_goals(previous: before, current: after).first
+goal.period          # => 2
+goal.time_in_period  # => "19:46"
+goal.strength        # => "SH"; also "EV", "PP", "EN" (empty net)
+goal.scorer_id       # => 8482451 (NHL player ID); assist_ids => [8476923, 8485469]
+goal.side            # => :away; home_score, away_score after the goal
+```
+
+Each is an `NHL::Goal`. Shootout attempts aren't goals and are left out (ADR 0020).
+
+### NHL standings
+
+```ruby
+require "sports_ingest/nhl"
+
+standings = SportsIngest::NHL::Standings.fetch(date: "2026-11-22") # no date: today
+car = standings.find("CAR")
+car.record                     # => "18-3-3"
+car.points                     # => 39
+car.home.wins                  # => 8
+standings.division("Metropolitan").map(&:tri_code)
+```
+
+Each `Standing` carries `team_id` from `SportsIngest::Teams`, ranks, the clinch letter and
+`home` / `road` / `last_10` records. Other NHL paths go through `SportsIngest::NHL::Client`
+(`get_json`, `stats_json`).
+
+### NHL rosters
+
+```ruby
+require "sports_ingest/nhl"
+
+rosters = SportsIngest::NHL::Rosters.new
+players = rosters.fetch("EDM")             # current season; any team code works
+rosters.fetch("EDM", season: 2024)         # 2024-25 as it stood after the season, offseason trades included
+
+mcdavid = players.find { it.last_name == "McDavid" }
+mcdavid.id          # => "8478402", the NHL ID and canonical ID
+mcdavid.position    # => "C" (C, L, R, D or G); also forward?, defense?, goalie?
+mcdavid.birth_date  # => #<Date: 1997-01-13>
+```
+
+Each roster is also saved to the processed cache under `nhl/rosters/<TEAM>/<20242025 or current>`.
+
+### NHL player details and game logs
+
+```ruby
+require "sports_ingest/nhl"
+
+mcdavid = SportsIngest::NHL.player(8478402)
+mcdavid.player.birth_date               # => #<Date: 1997-01-13>; the same Player a roster gives
+mcdavid.player.shoots_catches           # => "L"
+mcdavid.draft.overall_pick              # => 1
+mcdavid.career_regular_season.points    # career NHL totals; also career_playoffs
+mcdavid.nhl_seasons.map(&:season)       # one StatLine per NHL season and team; seasons has every league
+
+log = SportsIngest::NHL.game_log(8478402, season: 2025)  # 2025-26 regular season, oldest game first
+SportsIngest::NHL.game_log(8478402, season: 2025, game_type: :playoffs)
+SportsIngest::NHL.game_log(8478402)                      # the NHL's current log (this season, or the playoffs)
+log.first.toi_seconds                   # skater and goalie stats share GameLogEntry; the rest are nil
+```
+
+Details are saved to the processed cache under `nhl/players/<id>`, game logs under
+`nhl/game_logs/<id>/<20252026>/<regular or playoffs>`.
+
+### NHL season stat tables
+
+```ruby
+require "sports_ingest/nhl"
+
+skaters = SportsIngest::NHL.skater_stats                 # last 3 seasons, regular season (the default)
+SportsIngest::NHL.skater_stats(last: 5)
+SportsIngest::NHL.goalie_stats(seasons: [2024, 2025], game_type: :playoffs)
+
+row = skaters.max_by { it.stats.points }
+row.player_id                           # => "8478402", the NHL ID
+row.teams                               # => ["EDM"]; a traded player lists every team that season
+row.stats.avg_toi_seconds               # the same StatLine player details use
+```
+
+The current season turns over on October 1, so `last: 3` in the summer still counts the season
+that just ended. Each season is one table of 100-row pages (~10 for skaters, 1 or 2 for goalies),
+saved to the processed cache under `nhl/season_stats/<skaters|goalies>/<20252026>/<regular|playoffs>`.
+
 ## Endpoints used
 
 ### Web API: `https://api-web.nhle.com/v1`
