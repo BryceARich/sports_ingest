@@ -40,7 +40,8 @@ to_start.each do |r|
   branch = r[:branch]
   path = File.join(root, branch)
   log = File.join(logs, "#{branch}.log")
-  puts "start  ##{n}  #{label(issue)}  #{path}"
+  model = model_for(issue)
+  puts "start  ##{n}  #{label(issue)}  #{model}  #{path}"
   next if dry_run
 
   Dir.mkdir(root) unless Dir.exist?(root)
@@ -60,7 +61,7 @@ to_start.each do |r|
 
   env = bot_env.merge(bot_git_env)
   pid = Process.spawn(env, "claude", "-p", prompt,
-    "--permission-mode", "acceptEdits", "--allowedTools", ALLOWED_TOOLS,
+    "--model", model, "--permission-mode", "acceptEdits", "--allowedTools", ALLOWED_TOOLS,
     chdir: path, in: File::NULL, out: log, err: [:child, :out], pgroup: true)
   Process.detach(pid)
   puts "       log: #{log}"

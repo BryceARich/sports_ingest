@@ -120,6 +120,9 @@ Two slash commands in `.claude/commands/` script this:
   headless `claude -p` sessions in `../sports_ingest-worktrees/<branch>`. They don't show in the
   app; check their logs instead. It needs the `claude` CLI installed and logged in.
 
+Both pick a model per issue (`model_for` in `script/claude/lib/issues.rb`): Opus 5.5 for M3, M6 and
+`needs-decision` issues, Sonnet 5.5 otherwise; `ready-issues` prints it on each `READY` line.
+
 The repo is public, so both only trust people with a role on the repo (owner, org member or
 collaborator): the scripts skip issues anyone else opened, and `/work-issue` reads only those
 people's comments. Keep it that way; a session holds a GitHub token and can run code on your machine.

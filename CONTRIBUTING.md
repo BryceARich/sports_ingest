@@ -66,7 +66,9 @@ Claude Code does a lot of the implementation, under the same review rules as any
   change, opens a PR from the template, and moves the issue to Awaiting Human Review.
   It doesn't merge its own PRs; the maintainer reviews and merges. `/work-issue <N>` runs this
   for one issue. After a merge, `/spawn-unblocked` (in the desktop app) starts a separate
-  session for each issue that the merge unblocked.
+  session for each issue that the merge unblocked. Each session's model is picked per issue
+  (Opus 5.5 for M3, M6 and `needs-decision` issues, Sonnet 5.5 otherwise); override per clone
+  with `git config --local claude.modelDefault <model-id>` and `claude.modelDesign <model-id>`.
 - **Attribution.** Commits Claude writes end with a `Co-Authored-By:` trailer, and its PR
   descriptions say they were generated with Claude Code.
 - **Limits.** Claude follows the licensed-data rule like everyone else, and stops and flags it if
