@@ -93,8 +93,8 @@ module SportsIngest
       # @raise [ArgumentError] if an ID is blank, +season+ isn't an Integer, +date+ isn't a date,
       #   +home+ isn't a Boolean, +game_type+ is unknown, or a stat isn't one of {STATS}
       def initialize(player_id:, game_id:, season:, game_type:, date:, team:, opponent:, home:, **stats)
-        raise ArgumentError, "season must be an Integer, got #{season.inspect}" unless season.is_a?(Integer)
-        raise ArgumentError, "home must be true or false, got #{home.inspect}" unless [true, false].include?(home)
+        self.class.check_integer(:season, season)
+        self.class.check_boolean(:home, home)
 
         unknown = stats.keys - STATS
         raise ArgumentError, "unknown stats #{unknown.inspect}" unless unknown.empty?

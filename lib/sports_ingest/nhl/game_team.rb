@@ -19,9 +19,7 @@ module SportsIngest
       # @param score [Integer, nil] goals so far
       # @raise [ArgumentError] if +id+ or +tri_code+ is blank, or +score+ isn't a non-negative Integer
       def initialize(id:, tri_code:, score: nil)
-        if !score.nil? && !(score.is_a?(Integer) && !score.negative?)
-          raise ArgumentError, "score must be a non-negative Integer or nil, got #{score.inspect}"
-        end
+        self.class.check_integer(:score, score, min: 0, allow_nil: true)
 
         super(id: Identity::PlayerRef.coerce_id(id), tri_code: Team.coerce_text(:tri_code, tri_code), score: score)
       end

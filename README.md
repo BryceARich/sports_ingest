@@ -99,6 +99,24 @@ SportsIngest::NHL::PollInterval.for(live)          # => 10
 SportsIngest::NHL::PollInterval.for_phase(:final)  # => nil: stop polling
 ```
 
+### NHL goals
+
+Goals from one game's play-by-play, and the ones a poll didn't have before:
+
+```ruby
+before = SportsIngest::NHL.goals(2026020378)
+# ...a few seconds later...
+after = SportsIngest::NHL.goals(2026020378)
+goal = SportsIngest::NHL.new_goals(previous: before, current: after).first
+goal.period          # => 2
+goal.time_in_period  # => "19:46"
+goal.strength        # => "SH"; also "EV", "PP", "EN" (empty net)
+goal.scorer_id       # => 8482451 (NHL player ID); assist_ids => [8476923, 8485469]
+goal.side            # => :away; home_score, away_score after the goal
+```
+
+Each is an `NHL::Goal`. Shootout attempts aren't goals and are left out (ADR 0020).
+
 ### NHL standings
 
 ```ruby

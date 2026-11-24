@@ -104,4 +104,49 @@ RSpec.describe SportsIngest::Model do
       expect { team_class.coerce("EDM") }.to raise_error(ArgumentError, /String/)
     end
   end
+
+  describe "shared field checks" do
+    let(:checker) { SportsIngest::Model.define(:value) }
+
+    it "check_integer enforces type, minimum and nil" do
+      expect { checker.check_integer(:n, 3, min: 1) }.not_to raise_error
+      expect { checker.check_integer(:n, nil, allow_nil: true) }.not_to raise_error
+      expect { checker.check_integer(:n, 0, min: 1) }.to raise_error(ArgumentError, /n must be an Integer of at least 1, got 0/)
+      expect { checker.check_integer(:n, nil) }.to raise_error(ArgumentError, /n must be an Integer, got nil/)
+      expect { checker.check_integer(:n, "3") }.to raise_error(ArgumentError, /an Integer/)
+    end
+
+    it "check_boolean enforces true or false, with nil when allowed" do
+      expect { checker.check_boolean(:flag, false) }.not_to raise_error
+      expect { checker.check_boolean(:flag, nil, allow_nil: true) }.not_to raise_error
+      expect { checker.check_boolean(:flag, nil) }.to raise_error(ArgumentError, /flag must be true or false/)
+      expect { checker.check_boolean(:flag, "yes", allow_nil: true) }.to raise_error(ArgumentError, /true, false or nil/)
+    end
+
+    it "check_strings requires an Array of Strings" do
+      expect(checker.check_strings(:words, ["PP"])).to eq(["PP"])
+      expect { checker.check_strings(:words, "PP") }.to raise_error(ArgumentError, /Array of Strings/)
+      expect { checker.check_strings(:words, ["PP", 1]) }.to raise_error(ArgumentError, /Array of Strings/)
+    end
+
+    it "coerce_codes allows listed keys, converts values and sorts by key" do
+      codes = checker.coerce_codes({"b" => 2, :a => 1}, keys: %i[a b]) { |_key, value| value }
+
+      expect(codes).to eq({a: 1, b: 2})
+      expect(codes.keys).to eq(%i[a b])
+    end
+
+    it "coerce_codes rejects unknown keys by name, or by pattern" do
+      expect { checker.coerce_codes({c: 1}, keys: %i[a b]) { |_, v| v } }
+        .to raise_error(ArgumentError, /codes has no field :c/)
+      expect { checker.coerce_codes({c: 1}, keys: /\A[a-z]+\z/, noun: "source") { |_, v| v } }
+        .not_to raise_error
+      expect { checker.coerce_codes({"Bad Key": 1}, keys: /\A[a-z]+\z/, noun: "source") { |_, v| v } }
+        .to raise_error(ArgumentError, /codes has no source/)
+    end
+
+    it "coerce_codes requires a Hash" do
+      expect { checker.coerce_codes([:a], keys: %i[a]) { |_, v| v } }.to raise_error(ArgumentError, /must be a Hash/)
+    end
+  end
 end
