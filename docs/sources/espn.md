@@ -5,7 +5,7 @@
   `espn/fhl_season_2027`); unknown league IDs returned 404 with the JSON below, and an ID too big for
   ESPN returned 400. A **private** league's 401 was not seen live (none on hand); the client relies
   only on the status.
-- **Client:** `SportsIngest::ESPN::Client` (ADR 0032); filters with `SportsIngest::ESPN::Filter`
+- **Client:** `SportsIngest::ESPN::Read::Client` (ADR 0032); filters with `SportsIngest::ESPN::Read::Filter`
 - **Default raw-cache TTL:** 900 seconds (`SPORTS_INGEST_TTL_ESPN`)
 
 ## Usage
@@ -19,12 +19,12 @@ from a logged-in browser in `SPORTS_INGEST_ESPN_S2` / `SPORTS_INGEST_ESPN_SWID` 
 ```ruby
 require "sports_ingest/espn"
 
-espn = SportsIngest::ESPN::Client.new(game: :hockey) # or :football
+espn = SportsIngest::ESPN::Read::Client.new(game: :hockey) # or :football
 league = espn.league(12_345, season: 2027, views: %w[mSettings mTeam])
 league.dig("settings", "name")
 
 espn.get_json("seasons/2027/players", views: ["kona_player_info"],
-  filter: SportsIngest::ESPN::Filter.players(limit: 50, status: :free_agent, sort_percent_owned: true))
+  filter: SportsIngest::ESPN::Read::Filter.players(limit: 50, status: :free_agent, sort_percent_owned: true))
 ```
 
 Hockey seasons are named by the year they end (2026-27 is `2027`), football by the year it starts.
@@ -48,7 +48,7 @@ here with what it returns when an adapter starts using it.
 - **`mDraftDetail`** (M4-05) adds `draftDetail` to the league and to each `leagueHistory` entry:
   `drafted`, `inProgress` and `picks`. Each pick has `overallPickNumber`, `roundId`,
   `roundPickNumber`, `teamId` (the fantasy team in that league), `playerId` (ESPN's player ID) and
-  `keeper`. `SportsIngest::ESPN::Drafts` reads it; the shape is from ESPN's undocumented responses
+  `keeper`. `SportsIngest::ESPN::Read::Drafts` reads it; the shape is from ESPN's undocumented responses
   and has not been checked against a live league yet (see the M4-05 note in the PR).
 
 Players carry a `proTeamId` (0 means free agent). It's ESPN's team ID, and maps to a team through
@@ -58,9 +58,9 @@ ESPN's abbreviations differ from the NHL's for `LA`, `NJ`, `SJ`, `TB` and `UTAH`
 Pass views as `views: [...]`; the client sends each as its own `view=` parameter.
 
 The `X-Fantasy-Filter` header is JSON, e.g. `{"players":{"limit":50}}`. Build it with
-`ESPN::Filter.players(limit:, offset:, ids:, status:, slot_ids:, sort_percent_owned:)` (keys
+`ESPN::Read::Filter.players(limit:, offset:, ids:, status:, slot_ids:, sort_percent_owned:)` (keys
 `limit`, `offset`, `filterIds`, `filterStatus` with `FREEAGENT` / `WAIVERS` / `ONTEAM`,
-`filterSlotIds`, `sortPercOwned`), or `ESPN::Filter.new(hash)` for other keys.
+`filterSlotIds`, `sortPercOwned`), or `ESPN::Read::Filter.new(hash)` for other keys.
 
 ```bash
 curl -s -H 'X-Fantasy-Filter: {"players":{"limit":1}}' \

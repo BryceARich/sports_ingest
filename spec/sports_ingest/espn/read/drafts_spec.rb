@@ -2,7 +2,7 @@
 
 require "sports_ingest/espn"
 
-RSpec.describe SportsIngest::ESPN::Drafts do
+RSpec.describe SportsIngest::ESPN::Read::Drafts do
   subject(:drafts) { described_class.new(client: client) }
 
   let(:config) { SportsIngest::Configuration.new(env: {}).tap { |c| c.raw_cache = :off } }
@@ -10,7 +10,7 @@ RSpec.describe SportsIngest::ESPN::Drafts do
   let(:http) do
     SportsIngest::HTTP::Client.new(source: :espn, rate_limiter: limiter, max_retries: 0, configuration: config)
   end
-  let(:client) { SportsIngest::ESPN::Client.new(game: :hockey, http: http, configuration: config) }
+  let(:client) { SportsIngest::ESPN::Read::Client.new(game: :hockey, http: http, configuration: config) }
   let(:base) { "https://lm-api-reads.fantasy.espn.com/apis/v3/games/fhl" }
   let(:json) { {"Content-Type" => "application/json;charset=utf-8"} }
 
@@ -45,7 +45,7 @@ RSpec.describe SportsIngest::ESPN::Drafts do
       expect(draft.drafted).to be(true)
       expect(draft.in_progress).to be(false)
       expect(draft.picks.map(&:overall_pick)).to eq([1, 2, 3])
-      expect(draft.picks.first).to eq(SportsIngest::ESPN::DraftPick.new(overall_pick: 1, round: 1, round_pick: 1,
+      expect(draft.picks.first).to eq(SportsIngest::ESPN::Read::DraftPick.new(overall_pick: 1, round: 1, round_pick: 1,
         team_id: 7, player_id: 3_002, keeper: true))
     end
   end
