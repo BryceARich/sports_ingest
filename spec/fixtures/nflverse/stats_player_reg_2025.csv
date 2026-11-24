@@ -1,0 +1,3 @@
+player_id,player_name,player_display_name,position,position_group,headshot_url,recent_team,season,season_type,completions,attempts,passing_yards,passing_tds,interceptions,passing_epa,carries,rushing_yards,rushing_tds,receptions,targets,receiving_yards,receiving_tds,fantasy_points_ppr
+00-0000001,Ex Quarterback,Example Quarterback,QB,QB,,KC,2025,REG,320,480,3650,24,7,62.5,40,210,2,0,0,0,0,298.7
+00-0000002,Ex Receiver,Example Receiver,WR,WR,,KC,2025,REG,0,0,0,0,0,NA,3,8,0,71,104,1020,7,176.2

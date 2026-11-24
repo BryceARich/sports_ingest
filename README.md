@@ -247,6 +247,20 @@ A file is downloaded once and reused until the tag's `timestamp.json` changes, w
 most once per nflverse TTL (`SPORTS_INGEST_TTL_NFLVERSE`, a day by default). Offline, the last copy
 comes back with `stale: true`. nflverse data is CC-BY-4.0: credit nflverse wherever you show it.
 
+### nflverse player stats
+
+```ruby
+stats = SportsIngest::Nflverse::PlayerStats.new
+stats.weekly(last: 3)  # => [PlayerWeekStats, ...] one per player per game, incl. playoffs
+stats.season(seasons: [2025]) # => [PlayerSeasonStats, ...] regular-season totals
+stats.season(last: 3).first.stats["passing_yards"]
+```
+
+`seasons:` or `last:` work as everywhere else, `last: 3` by default. Stats are numeric columns keyed
+by their nflverse names (`"passing_yards"`, `"fantasy_points_ppr"`); blank and `NA` cells are left out
+([ADR 0041](docs/adr/0041-nflverse-player-stats-models.md)). A season whose file doesn't exist yet
+raises `SportsIngest::NotFound`.
+
 ## Development
 
 Ruby is pinned in `.ruby-version` and installed with [mise](https://mise.jdx.dev).

@@ -45,6 +45,14 @@ so prefer the direct download URL and `timestamp.json` over listing.
 - **`last_updated` is compared as a string**, never parsed: it's US Eastern time with an `EST`
   suffix, and we only need to know whether it changed. Checked 2026-11-23 for `stats_player` and
   `players`.
+- **Weekly and season files differ in shape.** `stats_player_week_<season>.csv` has a `week` and
+  `season_type` (`REG` or `POST`) column and `opponent_team`; `stats_player_reg_<season>.csv` is
+  regular season only, with no `week`. Both key players by GSIS `player_id`. Stat cells can be `NA`
+  (a stat that doesn't apply to the position), which `PlayerStats` reads as missing
+  ([ADR 0041](../adr/0041-nflverse-player-stats-models.md)). Column names were not checked
+  against a live download when M5-02 was written; the specs use
+  invented fixtures in `spec/fixtures/nflverse/` with this layout. Check the header of a real file
+  before relying on a column name.
 - **`player_stats` is the old tag.** Its `timestamp.json` stopped at 2025-05-07; current player
   stats are under `stats_player`. Don't read `player_stats`.
 - **Season files appear as the season goes**: `stats_player_week_2026.csv` exists during the 2026
