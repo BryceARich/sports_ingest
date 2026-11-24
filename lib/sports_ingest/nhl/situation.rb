@@ -52,9 +52,9 @@ module SportsIngest
         unless code.is_a?(String) && code.match?(/\A[01]\d\d[01]\z/)
           raise ArgumentError, "code must be a four-digit situationCode such as \"1451\", got #{code.inspect}"
         end
-        if !seconds_remaining.nil? && !(seconds_remaining.is_a?(Integer) && !seconds_remaining.negative?)
-          raise ArgumentError, "seconds_remaining must be a non-negative Integer or nil, got #{seconds_remaining.inspect}"
-        end
+        self.class.check_integer(:seconds_remaining, seconds_remaining, min: 0, allow_nil: true)
+        self.class.check_strings(:home_descriptions, home_descriptions)
+        self.class.check_strings(:away_descriptions, away_descriptions)
 
         decoded = self.class.decode(code)
         counts.each do |name, value|
@@ -64,8 +64,7 @@ module SportsIngest
 
         super(
           code: code, seconds_remaining: seconds_remaining, **decoded,
-          home_descriptions: coerce_descriptions(:home_descriptions, home_descriptions),
-          away_descriptions: coerce_descriptions(:away_descriptions, away_descriptions)
+          home_descriptions: home_descriptions, away_descriptions: away_descriptions
         )
       end
 
@@ -133,14 +132,6 @@ module SportsIngest
             away_descriptions: situation.fetch("awayTeam").fetch("situationDescriptions", [])
           )
         end
-      end
-
-      private
-
-      def coerce_descriptions(name, value)
-        return value if value.is_a?(Array) && value.all?(String)
-
-        raise ArgumentError, "#{name} must be an Array of Strings, got #{value.inspect}"
       end
     end
   end

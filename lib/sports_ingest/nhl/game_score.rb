@@ -54,19 +54,23 @@ module SportsIngest
       # @raise [ArgumentError] if a field is the wrong type or out of range
       def initialize(game:, period: nil, period_type: nil, seconds_remaining: nil, clock_running: nil,
         in_intermission: nil, codes: {}, home_shots: nil, away_shots: nil, situation: nil)
-        check_count(:period, period, min: 1)
-        check_count(:seconds_remaining, seconds_remaining, min: 0)
-        check_count(:home_shots, home_shots, min: 0)
-        check_count(:away_shots, away_shots, min: 0)
-        {clock_running: clock_running, in_intermission: in_intermission}.each do |name, value|
-          raise ArgumentError, "#{name} must be true, false or nil, got #{value.inspect}" unless [true, false, nil].include?(value)
-        end
+        self.class.check_integer(:period, period, min: 1, allow_nil: true)
+        self.class.check_integer(:seconds_remaining, seconds_remaining, min: 0, allow_nil: true)
+        self.class.check_integer(:home_shots, home_shots, min: 0, allow_nil: true)
+        self.class.check_integer(:away_shots, away_shots, min: 0, allow_nil: true)
+        self.class.check_boolean(:clock_running, clock_running, allow_nil: true)
+        self.class.check_boolean(:in_intermission, in_intermission, allow_nil: true)
 
         super(
           game: Game.coerce(game), period: period,
           period_type: period_type && Game.coerce_coded(:ended_in, period_type),
           seconds_remaining: seconds_remaining, clock_running: clock_running, in_intermission: in_intermission,
-          codes: coerce_codes(codes), home_shots: home_shots, away_shots: away_shots,
+          codes: self.class.coerce_codes(codes, keys: [:period_type]) do |_, code|
+            raise ArgumentError, "codes[:period_type] must be a String" unless code.is_a?(String)
+
+            code
+          end,
+          home_shots: home_shots, away_shots: away_shots,
           situation: situation && Situation.coerce(situation)
         )
       end
@@ -168,25 +172,6 @@ module SportsIngest
           id = game["id"] if game.is_a?(Hash)
           raise SourceChangedError.new("NHL score for game #{id.inspect} isn't shaped as expected: #{e.message}",
             source: Client::SOURCE)
-        end
-      end
-
-      private
-
-      def check_count(name, value, min:)
-        return if value.nil? || (value.is_a?(Integer) && value >= min)
-
-        raise ArgumentError, "#{name} must be an Integer of at least #{min} or nil, got #{value.inspect}"
-      end
-
-      def coerce_codes(codes)
-        raise ArgumentError, "codes must be a Hash, got #{codes.class}" unless codes.is_a?(Hash)
-
-        codes.to_h do |field, code|
-          raise ArgumentError, "codes has no field #{field.inspect}" unless field.to_sym == :period_type
-          raise ArgumentError, "codes[:period_type] must be a String" unless code.is_a?(String)
-
-          [:period_type, code]
         end
       end
     end
