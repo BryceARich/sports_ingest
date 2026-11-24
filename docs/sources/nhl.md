@@ -100,6 +100,12 @@ seconds at most while live.
   `birthStateProvince` are often missing. A team code with no roster that season (e.g.
   `ARI/20232024`) answers `200` with `{}`; an unknown code answers `404` with an HTML page.
   Recorded as `nhl/roster_edm_20252026` on 2026-11-23.
+- **A past season's roster is an offseason snapshot, not everyone who played.** Checked against
+  2024-25 on 2026-11-23: players are listed under the team they were with after the season,
+  offseason trades included. Rantanen (COL, CAR, DAL that season) is only on DAL's; Coyle and
+  Wood, who finished the season with COL, are on CBJ's, a team they didn't play for that year.
+  Players traded away and most call-ups are missing (COL used 43 skaters; its roster lists 21).
+  For who played for a team in a season, use game logs or the stats REST tables (M2-08, M2-09).
 - **Shapes change between seasons** without notice. Re-record fixtures at the start of each
   season and update the date above.
 

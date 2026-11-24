@@ -45,7 +45,10 @@ client yet, and M2-02 and M2-06 were being built at the same time.
 
 - M2-08 can extend `NHL::Player` (bump `SCHEMA_VERSION`) or add a separate details model; either
   way the ref and bio fields here stay the base.
-- `team` on a player means "the roster it came from", not necessarily the current team.
+- `team` on a player means "the roster it came from", not necessarily the current team. For a
+  past season the NHL's roster is an offseason snapshot (offseason trades included), so it
+  doesn't answer "who played for this team that season"; game logs and stat tables (M2-08,
+  M2-09) do.
 - Relocated teams' past rosters (`ARI`) can't be fetched, since `Teams.fetch` only knows current
   codes.
 - Other NHL adapters reuse `NHL::Client` and `NHL::Season`, so parallel M2 PRs should not each

@@ -4,6 +4,10 @@ module SportsIngest
   module NHL
     # Team rosters from +/roster/{TEAM}/{season}+, as {Player} models.
     #
+    # A past season's roster is the NHL's snapshot of the team after that season, offseason
+    # trades included: it isn't everyone who played for the team that year, and can list players
+    # who never did (+docs/sources/nhl.md+). The current roster is the team as of today.
+    #
     # Each roster is also written to the processed cache under
     # +nhl/rosters/<TRI_CODE>/<season ID or "current">+, so consumers can read it with
     # +Cache::Processed#read(key, model: NHL::Player)+.
@@ -27,7 +31,8 @@ module SportsIngest
       #
       # @param team [Team, String] a {Team} or any code {Teams.fetch} resolves, such as +"EDM"+
       # @param season [Integer, nil] the year the season starts in (ADR 0006); +nil+ means the
-      #   current season
+      #   current season. A past season gives the team as it stood after that season, not
+      #   everyone who played for it
       # @return [Array<Player>] the players; empty when the NHL has no roster for that season
       # @raise [NotFound] if the team code is unknown, or the NHL has no such roster
       # @raise [ArgumentError] if +season+ isn't a valid start year

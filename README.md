@@ -95,7 +95,7 @@ require "sports_ingest/nhl"
 
 rosters = SportsIngest::NHL::Rosters.new
 players = rosters.fetch("EDM")             # current season; any team code works
-rosters.fetch("EDM", season: 2024)         # 2024-25 (seasons are named by start year)
+rosters.fetch("EDM", season: 2024)         # 2024-25 as it stood after the season, offseason trades included
 
 mcdavid = players.find { it.last_name == "McDavid" }
 mcdavid.id          # => "8478402", the NHL ID and canonical ID
