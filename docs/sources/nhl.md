@@ -95,6 +95,25 @@ seconds at most while live.
   "NY Rangers" / "NY Islanders" where `teamName` says "New York". `/standings/{date}` for an
   off-season date may come back with an empty `standings` list (unverified; `Standings` handles it).
 - **Unknown IDs return `404`** (e.g. `/player/1/landing`); map that to `SportsIngest::NotFound`.
+- **Rosters:** `/roster/{TEAM}/{season}` returns `forwards`, `defensemen` and `goalies`. Names and
+  birth cities are localized objects (`{"default": "Jiří", "cs": ...}`); `sweaterNumber` and
+  `birthStateProvince` are often missing. A team code with no roster that season (e.g.
+  `ARI/20232024`) answers `200` with `{}`; an unknown code answers `404` with an HTML page.
+  Recorded as `nhl/roster_edm_20252026` on 2026-11-23.
+- **A past season's roster is an offseason snapshot, not everyone who played.** Checked on
+  2026-11-23 against 2024-25 and 2023-24 (dates of moves are from memory, not the API):
+  - **Mid-season and offseason trades:** players are listed under the team they were with at the
+    snapshot. Rantanen (COL, CAR, DAL in 2024-25) is only on DAL's; Coyle and Wood, who finished
+    2024-25 with COL, are on CBJ's; Dobson, traded NYI to MTL at the June 2025 draft, is on MTL's.
+  - **2024-25 looks like June 30:** UFAs who left on July 1 are still on their old team (Marner on
+    TOR, not VGK; Ehlers on WPG, not CAR), and 2025 draft picks aren't listed (Schaefer isn't on NYI).
+  - **2023-24 differs:** Stamkos, a UFA who left TBL for NSH on July 1, 2024, is on neither roster,
+    and the rosters are small (TBL 18, NSH 15 against 23 to 42 per team for 2024-25). Guentzel,
+    whose rights TBL got in June 2024, is on TBL's. Whether expiring contracts are listed depends
+    on the season.
+  - **Who played is missing:** players traded away and most call-ups aren't listed (COL used 43
+    skaters in 2024-25; its roster lists 21). For who played for a team in a season, use game logs
+    or the stats REST tables (M2-08, M2-09).
 - **Shapes change between seasons** without notice. Re-record fixtures at the start of each
   season and update the date above.
 
