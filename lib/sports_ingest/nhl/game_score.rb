@@ -2,11 +2,12 @@
 
 module SportsIngest
   module NHL
-    # One game on the scoreboard (ADR 0018): the {Game}, with its scores and state, plus where a
-    # game in progress stands: period and clock.
+    # One game on the scoreboard (ADRs 0018 and 0019): the {Game}, with its scores and state, plus
+    # where a game in progress stands: period, clock, shots on goal and any power play.
     #
-    # The period and clock fields are +nil+ before the game starts. After it ends, +period+ is the
-    # last one played and the clock reads zero.
+    # The period, clock and shot fields are +nil+ before the game starts. After it ends, +period+
+    # is the last one played and the clock shows what was left in it (zero, unless overtime ended
+    # early). {#phase} sums it all up as one symbol.
     #
     # @!attribute [r] game
     #   @return [Game] the game, with both sides' scores once it has started
@@ -24,13 +25,19 @@ module SportsIngest
     # @!attribute [r] codes
     #   @return [Hash{Symbol => String}] the NHL's raw +periodDescriptor.periodType+ as
     #     +:period_type+, when the payload had one
+    # @!attribute [r] home_shots
+    #   @return [Integer, nil] the home team's shots on goal
+    # @!attribute [r] away_shots
+    #   @return [Integer, nil] the away team's shots on goal
+    # @!attribute [r] situation
+    #   @return [Situation, nil] the power play or pulled goalie under way; +nil+ at even strength
     #
     # @example
     #   score = SportsIngest::NHL.scores.find(&:live?)
     #   "#{score.away_team.tri_code} #{score.away_team.score}, #{score.home_team.tri_code} " \
     #     "#{score.home_team.score} (P#{score.period}, #{score.clock})" # => "CBJ 0, NJD 2 (P1, 08:16)"
     GameScore = Model.define(:game, :period, :period_type, :seconds_remaining, :clock_running, :in_intermission,
-      :codes)
+      :codes, :home_shots, :away_shots, :situation, schema_version: 2)
 
     # Reopened so methods resolve inside the class.
     class GameScore
@@ -41,11 +48,16 @@ module SportsIngest
       # @param clock_running [Boolean, nil]
       # @param in_intermission [Boolean, nil]
       # @param codes [Hash{Symbol, String => String}] the NHL's raw period type, as +:period_type+
+      # @param home_shots [Integer, nil] home shots on goal, not negative
+      # @param away_shots [Integer, nil] away shots on goal, not negative
+      # @param situation [Situation, Hash, nil]
       # @raise [ArgumentError] if a field is the wrong type or out of range
       def initialize(game:, period: nil, period_type: nil, seconds_remaining: nil, clock_running: nil,
-        in_intermission: nil, codes: {})
+        in_intermission: nil, codes: {}, home_shots: nil, away_shots: nil, situation: nil)
         check_count(:period, period, min: 1)
         check_count(:seconds_remaining, seconds_remaining, min: 0)
+        check_count(:home_shots, home_shots, min: 0)
+        check_count(:away_shots, away_shots, min: 0)
         {clock_running: clock_running, in_intermission: in_intermission}.each do |name, value|
           raise ArgumentError, "#{name} must be true, false or nil, got #{value.inspect}" unless [true, false, nil].include?(value)
         end
@@ -54,7 +66,8 @@ module SportsIngest
           game: Game.coerce(game), period: period,
           period_type: period_type && Game.coerce_coded(:ended_in, period_type),
           seconds_remaining: seconds_remaining, clock_running: clock_running, in_intermission: in_intermission,
-          codes: coerce_codes(codes)
+          codes: coerce_codes(codes), home_shots: home_shots, away_shots: away_shots,
+          situation: situation && Situation.coerce(situation)
         )
       end
 
@@ -88,6 +101,35 @@ module SportsIngest
         game.final?
       end
 
+      # Where the game stands, as one symbol:
+      #
+      # - +:pre+: not started (scheduled or in pregame, postponed games included; see {Game#schedule_state})
+      # - +:regulation+, +:overtime+, +:shootout+: in progress, in that kind of period
+      # - +:intermission+: in progress, between periods
+      # - +:final+: over; {Game#ended_in} says whether in regulation, overtime or a shootout
+      # - +:unknown+: a game state or period type the gem doesn't know
+      #
+      # @return [Symbol]
+      def phase
+        case state
+        when :scheduled, :pregame then :pre
+        when :final then :final
+        when :live
+          return :intermission if in_intermission
+
+          LIVE_PHASES.fetch(period_type, :unknown)
+        else :unknown
+        end
+      end
+
+      # Phases of a game in progress, by period type.
+      LIVE_PHASES = {regulation: :regulation, overtime: :overtime, shootout: :shootout}.freeze
+
+      # @return [Symbol, nil] the side on a power play, +:home+ or +:away+; +nil+ for none
+      def power_play
+        situation&.power_play
+      end
+
       # The time left in the period as the NHL shows it.
       #
       # @return [String, nil] +MM:SS+, or +nil+ before the game starts
@@ -115,7 +157,10 @@ module SportsIngest
             seconds_remaining: clock&.fetch("secondsRemaining"),
             clock_running: clock&.fetch("running"),
             in_intermission: clock&.fetch("inIntermission"),
-            codes: code ? {period_type: code} : {}
+            codes: code ? {period_type: code} : {},
+            home_shots: game.fetch("homeTeam")["sog"],
+            away_shots: game.fetch("awayTeam")["sog"],
+            situation: game["situation"] && Situation.parse(game["situation"])
           )
           Game.warn_unknown(:ended_in, code, built.id) if code
           built
