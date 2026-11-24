@@ -7,7 +7,7 @@
   2026-11-22 (`spec/fixtures/cassettes/nhl/`). `/schedule/2026-11-16`, `/club-schedule/TOR/week/2026-11-16`
   and `.../2026-11-23`, and `/club-schedule/TOR/month/2026-11` were recorded on 2026-11-23, and `/score/now` (redirecting
   to `/score/2026-11-23`, one game live) the evening of 2026-11-23; `/score/now` again later that evening
-  (a power play, an intermission and finals) and `/score/2026-11-21` (overtime and shootout finals).
+  (a power play, an intermission and finals) and `/score/2026-11-11` (overtime and shootout finals).
 - **Default raw-cache TTL:** 3600 seconds (`SPORTS_INGEST_TTL_NHL`); live-game calls will want far
   less (the polling helper, M2-10).
 
@@ -23,7 +23,7 @@ Two public hosts, neither documented by the NHL. Both sit behind Cloudflare.
 | `/club-schedule-season/{TEAM}/{season}` | one team's season, e.g. `TOR/20252026` (~190 KB) | M2-02 |
 | `/club-schedule/{TEAM}/week/{YYYY-MM-DD}` | one team's games in the 7 days from that date (~6 KB) | M2-02 |
 | `/club-schedule/{TEAM}/month/{YYYY-MM}` | one team's games in that month (~26 KB) | M2-02 |
-| `/score/{YYYY-MM-DD}`, `/score/now` | that day's games with `gameState`, scores, `clock`, `periodDescriptor`, per-team `sog`, `situation`, `goals` (~25 to 40 KB; ~250 KB for a 14-game day) | M2-03, M2-04 |
+| `/score/{YYYY-MM-DD}`, `/score/now` | that day's games with `gameState`, scores, `clock`, `periodDescriptor`, per-team `sog`, `situation`, `goals` (~25 to 40 KB) | M2-03, M2-04 |
 | `/scoreboard/now` | several days of games around today (~160 KB); not used, `/score` is lighter | — |
 | `/gamecenter/{gameId}/landing` | one game: state, `clock`, `periodDescriptor`, `sog`, `situation`, summary (~10 KB); not used yet, `/score` covers live state (ADR 0019) | — |
 | `/gamecenter/{gameId}/boxscore` | box score | M2-04 |
@@ -94,7 +94,7 @@ seconds at most while live.
   (`secondsRemaining`, `running`, `inIntermission`), `period` and `periodDescriptor`
   (`number`, `periodType` `REG`/`OT`/`SO`) are absent until the game starts (`FUT`, `PRE`); a final
   game keeps its last period and what was left on its clock: `00:00`, except an overtime that ended
-  early (`00:15`). A shootout is period 5 with `periodType` `SO`. Teams carry `sog` (shots on goal)
+  early (`04:13`). A shootout is period 5 with `periodType` `SO`. Teams carry `sog` (shots on goal)
   once the game starts. `goals` lists every goal with scorer and assists; the gem leaves it to M2-05.
 - **`situation` (in `/score` and `/gamecenter/.../landing`):** present only while a game isn't
   five-on-five with both goalies in. `situationCode` is four digits: away goalie (0/1), away

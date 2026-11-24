@@ -74,18 +74,18 @@ RSpec.describe "NHL live game state" do
     end
   end
 
-  describe "games decided in overtime and a shootout", vcr: {cassette_name: "nhl/score_2026_11_21"} do
-    subject(:scores) { by_id(scoreboard.on("2026-11-21")) }
+  describe "games decided in overtime and a shootout", vcr: {cassette_name: "nhl/score_2026_11_11"} do
+    subject(:scores) { by_id(scoreboard.on("2026-11-11")) }
 
     it "reads an overtime final, clock stopped where the winner went in" do
-      score = scores.fetch("2026020360")
+      score = scores.fetch("2026020295")
 
-      expect(score).to have_attributes(phase: :final, period: 4, period_type: :overtime, seconds_remaining: 15)
+      expect(score).to have_attributes(phase: :final, period: 4, period_type: :overtime, seconds_remaining: 253)
       expect(score.game.ended_in).to eq(:overtime)
     end
 
     it "reads a shootout final" do
-      score = scores.fetch("2026020369")
+      score = scores.fetch("2026020298")
 
       expect(score).to have_attributes(phase: :final, period: 5, period_type: :shootout)
       expect(score.game.ended_in).to eq(:shootout)

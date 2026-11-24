@@ -47,5 +47,5 @@ home goalie.
 - Cached scoreboards from schema 1 are refetched once.
 - The situation only exists while it lasts; an even-strength game has `situation: nil`.
 - Fixtures: `/score/now` late on 2026-11-23 (a power play, an intermission, finals) and
-  `/score/2026-11-21` (overtime and shootout finals, about 250 KB). Live overtime, live shootout and
-  pulled goalies are stubbed in the recorded shape.
+  `/score/2026-11-11` (six games: overtime and shootout finals, about 95 KB). Live overtime, live
+  shootout and pulled goalies are stubbed in the recorded shape.
