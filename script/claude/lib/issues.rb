@@ -5,6 +5,9 @@
 require "json"
 require "open3"
 
+# Files here are UTF-8 (cassettes, docs, gh output); don't depend on the shell's locale.
+Encoding.default_external = Encoding::UTF_8
+
 module ClaudeScripts
   PROJECT = "1" # project board number, under the repo owner
   UNSCHEDULED_MILESTONE = 8 # M8 "Later" is never started automatically
@@ -12,6 +15,12 @@ module ClaudeScripts
   # The repo is public, so anyone can open an issue or comment. Only text from people with a role
   # on the repo is acted on, so a stranger can't steer a session that holds a GitHub token.
   TRUSTED_ASSOCIATIONS = %w[OWNER MEMBER COLLABORATOR].freeze
+  # Model routing for spawned sessions: design-heavy work gets the stronger model, the rest the
+  # cheaper one. Override per clone with `git config claude.modelDefault` / `claude.modelDesign`.
+  DESIGN_MILESTONES = [3, 6].freeze # M3 player identity / crosswalk, M6 licensed hockey data
+  DESIGN_LABEL = "needs-decision"
+  MODEL_DEFAULT = "claude-sonnet-5-5"
+  MODEL_DESIGN = "claude-opus-5-5"
 
   module_function
 
@@ -102,6 +111,13 @@ module ClaudeScripts
     format("M%d-%02d", ms, item)
   end
 
+  # Model a spawned session should run: the design model for M3, M6 and `needs-decision` issues.
+  def model_for(issue)
+    design = DESIGN_MILESTONES.include?(build_order(issue["title"])&.first) ||
+      (issue["labels"] || []).include?(DESIGN_LABEL)
+    design ? (local_config("claude.modelDesign") || MODEL_DESIGN) : (local_config("claude.modelDefault") || MODEL_DEFAULT)
+  end
+
   def branch_name(issue)
     ms, item = build_order(issue["title"])
     words = TITLE_RE.match(issue["title"])[3].downcase.gsub(/[^a-z0-9]+/, "-").gsub(/\A-+|-+\z/, "")
@@ -111,7 +127,7 @@ module ClaudeScripts
   # All issues (no PRs), trimmed to the fields we use. One paginated REST call.
   def all_issues
     gh_lines("api", "repos/#{repo}/issues?state=all&per_page=100", "--paginate",
-      "--jq", ".[] | select(.pull_request | not) | {number, title, state, body, author: .user.login, association: .author_association}")
+      "--jq", ".[] | select(.pull_request | not) | {number, title, state, body, labels: [.labels[].name], author: .user.login, association: .author_association}")
   end
 
   # Issue numbers listed under "## Blocked by" in the body (HTML comments ignored).
