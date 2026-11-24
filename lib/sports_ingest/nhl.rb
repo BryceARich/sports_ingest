@@ -76,5 +76,29 @@ module SportsIngest
     def self.game_log(id, season: nil, game_type: nil)
       Players.new.game_log(id, season: season, game_type: game_type)
     end
+
+    # Skater season totals, one row per player per season. See {SeasonStats#skaters}.
+    #
+    # @param seasons [Array<Integer>, nil] start years
+    # @param last [Integer, nil] the N most recent seasons; +3+ when neither keyword is given
+    # @param game_type [Symbol] +:regular+ or +:playoffs+
+    # @return [Array<SeasonTotal>] by season, then player ID
+    # @raise (see SeasonStats#skaters)
+    # @example
+    #   SportsIngest::NHL.skater_stats(last: 5).group_by(&:player_id)
+    def self.skater_stats(seasons: nil, last: nil, game_type: :regular)
+      SeasonStats.new.skaters(seasons: seasons, last: last, game_type: game_type)
+    end
+
+    # Goalie season totals, one row per player per season. See {SeasonStats#goalies}.
+    #
+    # @param (see .skater_stats)
+    # @return (see .skater_stats)
+    # @raise (see SeasonStats#goalies)
+    # @example
+    #   SportsIngest::NHL.goalie_stats(seasons: [2025], game_type: :playoffs)
+    def self.goalie_stats(seasons: nil, last: nil, game_type: :regular)
+      SeasonStats.new.goalies(seasons: seasons, last: last, game_type: game_type)
+    end
   end
 end

@@ -131,6 +131,15 @@ seconds at most while live.
   is the current season and game type (the playoffs while they're on). In `last5Games`, goalie rows
   say `penaltyMins`, not `pim`. Recorded as `nhl/player_8478402_*` (McDavid) and
   `nhl/player_8479361_*` (a goalie) on 2026-11-23.
+- **Season stat tables:** `skater/summary` and `goalie/summary` give one row per player per
+  season and game type, a traded player's teams joined in `teamAbbrevs` (`"TOR,EDM"`). Skater rows
+  say `skaterFullName`, `positionCode`, `penaltyMinutes`, `ppGoals`, `shootingPct`, `faceoffWinPct`
+  and `timeOnIcePerGame` (seconds, a float); goalie rows say `goalieFullName`, `goalsAgainstAverage`,
+  `savePct` and `timeOnIce` (total seconds, an integer) and have no position. Without `sort` the
+  order isn't stable across pages; the gem sorts by `playerId`. A regular season is ~800 to 950
+  skaters (~10 pages) and ~100 goalies (1 to 2 pages). `cayenneExp` also takes ranges
+  (`seasonId>=20242025 and seasonId<=20252026`), unused. Recorded as `nhl/stats_goalie_summary_2022_to_2026_regular`
+  and `nhl/stats_skater_summary_2025_playoffs` on 2026-11-23.
 - **Shapes change between seasons** without notice. Re-record fixtures at the start of each
   season and update the date above.
 
