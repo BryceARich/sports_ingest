@@ -95,7 +95,8 @@ seconds at most while live.
   (`number`, `periodType` `REG`/`OT`/`SO`) are absent until the game starts (`FUT`, `PRE`); a final
   game keeps its last period and what was left on its clock: `00:00`, except an overtime that ended
   early (`04:13`). A shootout is period 5 with `periodType` `SO`. Teams carry `sog` (shots on goal)
-  once the game starts. `goals` lists every goal with scorer and assists; the gem leaves it to M2-05.
+  once the game starts. `goals` lists every goal with scorer and assists (M2-05 reads goals from the play-by-play instead,
+  ADR 0020).
 - **`situation` (in `/score` and `/gamecenter/.../landing`):** present only while a game isn't
   five-on-five with both goalies in. `situationCode` is four digits: away goalie (0/1), away
   skaters, home skaters, home goalie (`"1541"` is an away power play, 5v4). Each side has `abbrev`,
