@@ -55,6 +55,18 @@ canonical football ID (ADR 0042). Rows without a `gsis_id` are skipped; a malfor
 missing column or a bad birth date raises `SourceChangedError`. Results are also written to the
 processed cache under `nflverse/players` and `nflverse/rosters/<season>`.
 
+### nflverse player IDs
+
+```ruby
+map = SportsIngest::Nflverse::IdMap.new
+map.gsis_id(source: "espn", id: "1002")  # => "00-0000002", or nil
+map.players.first.ids                    # => {"espn" => "...", "sleeper" => "...", "pfr" => "..."} (only the IDs it has)
+```
+
+Maps ESPN, Sleeper or PFR player IDs to the GSIS ID the nflverse stats use. `nil` means no player
+has that ID, or two players share it; the lookup doesn't guess
+([ADR 0043](../adr/0043-player-id-map-from-players-release.md)).
+>
 ## Endpoints used
 
 Download: `https://github.com/nflverse/nflverse-data/releases/download/{tag}/{file}`
@@ -67,8 +79,6 @@ Download: `https://github.com/nflverse/nflverse-data/releases/download/{tag}/{fi
 | every tag | `timestamp.json`: `{"last_updated": "YYYY-MM-DD HH:MM:SS EST"}` | M5-01 |
 
 List a tag's assets: `https://api.github.com/repos/nflverse/nflverse-data/releases/tags/{tag}`.
-
-The ffverse ID map (M5-04) lives elsewhere; add its location here when that issue lands.
 
 ## Auth
 
