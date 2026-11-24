@@ -114,6 +114,15 @@ seconds at most while live.
   - **Who played is missing:** players traded away and most call-ups aren't listed (COL used 43
     skaters in 2024-25; its roster lists 21). For who played for a team in a season, use game logs
     or the stats REST tables (M2-08, M2-09).
+- **Player landing and game logs:** `/player/{id}/landing` has the roster's bio fields (plus
+  `isActive`, `currentTeamAbbrev`, `draftDetails`, missing for undrafted players), `careerTotals`
+  (`regularSeason`, `playoffs`; NHL only) and `seasonTotals`, one row per season, game type and
+  team in every league (junior, international), oldest first. Skater rows have `avgToi`, goalie
+  rows `timeOnIce` (total, e.g. `"7578:38"`), `savePctg`, `goalsAgainstAvg`, `wins`. Game logs list
+  games **newest first**; a season with no games answers `200` without a `gameLog` key. `/game-log/now`
+  is the current season and game type (the playoffs while they're on). In `last5Games`, goalie rows
+  say `penaltyMins`, not `pim`. Recorded as `nhl/player_8478402_*` (McDavid) and
+  `nhl/player_8479361_*` (a goalie) on 2026-11-23.
 - **Shapes change between seasons** without notice. Re-record fixtures at the start of each
   season and update the date above.
 
