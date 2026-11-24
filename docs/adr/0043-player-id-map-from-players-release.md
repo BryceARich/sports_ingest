@@ -6,7 +6,7 @@
 
 ## Context
 
-ESPN Fantasy, Sleeper and PFR each number players their own way. The nflverse stats (ADR 0041)
+ESPN Fantasy and PFR each number players their own way. The nflverse stats (ADR 0041)
 are keyed by GSIS ID, so a fantasy roster from ESPN has to be joined to them through a lookup
 table. M5-04 needs the acceptance criterion "an ESPN id → gsis_id lookup works".
 
@@ -16,7 +16,7 @@ doesn't map to exactly one player.
 ## Decision
 
 - **Source:** the `players.csv` file of the `players` release, fetched through `ReleaseDownloader`
-  (ADR 0040). It already carries `gsis_id` beside `espn_id`, `sleeper_id` and `pfr_id`, so no
+  (ADR 0040). It already carries `gsis_id` beside `espn_id` and `pfr_id`, so no
   other source is needed.
 - **Model:** `Nflverse::PlayerId`, one per row with a GSIS ID, holding the name, position and a hash
   of the source IDs the player has (`{"espn" => "1002"}`). A source with no ID is left out of the
@@ -41,7 +41,7 @@ doesn't map to exactly one player.
   working.
 - **Store one model per source ID, not one per player.** Each lookup becomes a row, but the player's
   name and position would repeat for each source, and the cross-source view a consumer wants
-  (ESPN ID and Sleeper ID for one player) would need a join.
+  (ESPN ID and PFR ID for one player) would need a join.
 
 ## Consequences
 
@@ -49,5 +49,6 @@ doesn't map to exactly one player.
   the file.
 - A player with no ID in a source is missing from that source's lookup. A consumer that needs to
   tell "no ID" from "shared ID" has to check the player's `ids` hash.
-- Only `espn`, `sleeper` and `pfr` are wired in. Adding a source is one line in
+- Only `espn` and `pfr` are wired in. Sleeper isn't: `players.csv` has no `sleeper_id` column (checked
+  against the live release header). Sleeper IDs would need another source, decided in its own issue. Adding a source is one line in
   `Nflverse::IdMap::ID_COLUMNS`, plus a schema-free change, since `ids` is a hash.

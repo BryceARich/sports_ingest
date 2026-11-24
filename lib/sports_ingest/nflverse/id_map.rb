@@ -4,7 +4,7 @@ require "csv"
 
 module SportsIngest
   module Nflverse
-    # Maps other sources' player IDs (ESPN, Sleeper, PFR) to nflverse's GSIS ID (ADR 0043).
+    # Maps other sources' player IDs (ESPN, PFR) to nflverse's GSIS ID (ADR 0043).
     #
     # - **Source:** the +players.csv+ file of the +players+ release, through {ReleaseDownloader}, so
     #   it's fetched once and reused until upstream changes. A stale copy is parsed as it is.
@@ -30,7 +30,7 @@ module SportsIngest
       SOURCE = :nflverse
 
       # Source name to the nflverse column that holds that source's ID.
-      ID_COLUMNS = {"espn" => "espn_id", "sleeper" => "sleeper_id", "pfr" => "pfr_id"}.freeze
+      ID_COLUMNS = {"espn" => "espn_id", "pfr" => "pfr_id"}.freeze
 
       # @param downloader [ReleaseDownloader, #fetch] fetches the file
       # @param processed [Cache::Processed, nil] where the table is saved; +nil+ skips saving
@@ -58,7 +58,7 @@ module SportsIngest
       # @raise [ArgumentError] if +source+ isn't one of {ID_COLUMNS}'s keys
       # @raise (see #players)
       # @example
-      #   map.gsis_id(source: :sleeper, id: "4046")
+      #   map.gsis_id(source: :pfr, id: "ExamQu00")
       def gsis_id(source:, id:)
         name = source.to_s
         raise ArgumentError, "unknown id source #{source.inspect}, use one of #{ID_COLUMNS.keys.join(", ")}" unless ID_COLUMNS.key?(name)

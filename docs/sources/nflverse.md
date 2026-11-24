@@ -60,10 +60,10 @@ processed cache under `nflverse/players` and `nflverse/rosters/<season>`.
 ```ruby
 map = SportsIngest::Nflverse::IdMap.new
 map.gsis_id(source: "espn", id: "1002")  # => "00-0000002", or nil
-map.players.first.ids                    # => {"espn" => "...", "sleeper" => "...", "pfr" => "..."} (only the IDs it has)
+map.players.first.ids                    # => {"espn" => "...", "pfr" => "..."} (only the IDs it has)
 ```
 
-Maps ESPN, Sleeper or PFR player IDs to the GSIS ID the nflverse stats use. `nil` means no player
+Maps ESPN or PFR player IDs to the GSIS ID the nflverse stats use. Sleeper isn't in `players.csv`. `nil` means no player
 has that ID, or two players share it; the lookup doesn't guess
 ([ADR 0043](../adr/0043-player-id-map-from-players-release.md)).
 >

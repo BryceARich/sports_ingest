@@ -41,8 +41,7 @@ RSpec.describe SportsIngest::Nflverse::IdMap do
       expect(map.gsis_id(source: "espn", id: "1002")).to eq("00-0000002")
     end
 
-    it "maps a Sleeper and a PFR ID too, given as a symbol or an integer" do
-      expect(map.gsis_id(source: :sleeper, id: 2001)).to eq("00-0000001")
+    it "maps a PFR ID too, given as a symbol" do
       expect(map.gsis_id(source: :pfr, id: "ExamQu00")).to eq("00-0000001")
     end
 
@@ -52,7 +51,7 @@ RSpec.describe SportsIngest::Nflverse::IdMap do
 
     it "returns nil for a blank ID, and for a player who has none in that source" do
       expect(map.gsis_id(source: "espn", id: " ")).to be_nil
-      expect(map.gsis_id(source: "sleeper", id: nil)).to be_nil
+      expect(map.gsis_id(source: "pfr", id: nil)).to be_nil
     end
 
     it "returns nil for an ID shared by two GSIS IDs, rather than guessing" do
@@ -61,6 +60,10 @@ RSpec.describe SportsIngest::Nflverse::IdMap do
 
     it "raises ArgumentError for a source it doesn't know" do
       expect { map.gsis_id(source: "yahoo", id: "1") }.to raise_error(ArgumentError, /unknown id source/)
+    end
+
+    it "raises ArgumentError for Sleeper, which the players file doesn't carry" do
+      expect { map.gsis_id(source: "sleeper", id: "2001") }.to raise_error(ArgumentError, /unknown id source/)
     end
   end
 
@@ -77,7 +80,7 @@ RSpec.describe SportsIngest::Nflverse::IdMap do
 
       expect(receiver).to have_attributes(name: "Example Receiver", position: "WR",
         ids: {"espn" => "1002", "pfr" => "ExamRe00"})
-      expect(map.players.find { it.gsis_id == "00-0000003" }.ids).to eq("espn" => "1003", "sleeper" => "2003")
+      expect(map.players.find { it.gsis_id == "00-0000003" }.ids).to eq("espn" => "1003")
     end
 
     it "saves the table to the processed cache" do

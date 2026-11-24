@@ -12,7 +12,7 @@ module SportsIngest
     #   @return [String, nil] such as +"QB"+ or +"WR"+
     # @!attribute [r] ids
     #   @return [Hash{String => String}] the player's ID in each source that has one, keyed by
-    #     source name (+"espn"+, +"sleeper"+, +"pfr"+); sources the player has no ID for are left out
+    #     source name (+"espn"+, +"pfr"+); sources the player has no ID for are left out
     #
     # @example
     #   player = SportsIngest::Nflverse::IdMap.new.players.first

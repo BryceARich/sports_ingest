@@ -1,7 +1,7 @@
-gsis_id,display_name,position,espn_id,sleeper_id,pfr_id
-00-0000001,Example Quarterback,QB,1001,2001,ExamQu00
-00-0000002,Example Receiver,WR,1002,,ExamRe00
-00-0000003,Example Kicker,K,1003,2003,
-00-0000004,Shared Id One,RB,1004,2004,
-00-0000005,Shared Id Two,RB,1004,2005,
-,No Gsis Row,TE,1006,2006,
+gsis_id,display_name,position,espn_id,pfr_id
+00-0000001,Example Quarterback,QB,1001,ExamQu00
+00-0000002,Example Receiver,WR,1002,ExamRe00
+00-0000003,Example Kicker,K,1003,
+00-0000004,Shared Id One,RB,1004,
+00-0000005,Shared Id Two,RB,1004,
+,No Gsis Row,TE,1006,
