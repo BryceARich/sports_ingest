@@ -40,6 +40,21 @@ by their nflverse names (`"passing_yards"`, `"fantasy_points_ppr"`); blank and `
 ([ADR 0041](docs/adr/0041-nflverse-player-stats-models.md)). A season whose file doesn't exist yet
 raises `SportsIngest::NotFound`.
 
+### players and rosters
+
+```ruby
+require "sports_ingest/nflverse"
+
+SportsIngest::Nflverse::Players.new.fetch.first.id         # => "00-0033873"
+SportsIngest::Nflverse::Rosters.new.fetch(2025).first.team  # => "PIT"
+```
+
+Players come from `players.csv` and rosters from `roster_<season>.csv`, both through the release
+downloader (so a file is reused until upstream changes). Models are keyed by `gsis_id`, the
+canonical football ID (ADR 0042). Rows without a `gsis_id` are skipped; a malformed `gsis_id`, a
+missing column or a bad birth date raises `SourceChangedError`. Results are also written to the
+processed cache under `nflverse/players` and `nflverse/rosters/<season>`.
+
 ## Endpoints used
 
 Download: `https://github.com/nflverse/nflverse-data/releases/download/{tag}/{file}`
