@@ -38,6 +38,32 @@ module SportsIngest
         parse(CsvTable.read(path))
       end
 
+      # Imports a skater GAR CSV file and matches its players to canonical IDs, printing the rows
+      # that need a look (ADR 0030).
+      #
+      # A row with one team is matched on that team; a traded player's row lists several, so it's
+      # matched on name and position only. Rows are combined per player and season first.
+      #
+      # @param path [String] the exported file; +~+ is expanded
+      # @param matcher [Identity::Matcher] built from the known players, such as NHL rosters
+      # @param io [#puts, nil] where the report is printed; +nil+ prints nothing
+      # @return [Identity::UnmatchedReport] every row's match, with the ones needing review
+      # @raise [NotFound] if the file doesn't exist
+      # @raise [ParseError] if the file isn't valid CSV
+      # @raise [SourceChangedError] if a column is missing or a cell doesn't fit its column
+      # @example
+      #   report = SportsIngest::AdvancedHockey::SkaterGarImport.report("~/hockey/GAR.csv", matcher: matcher)
+      #   report.review.size # => 3
+      def report(path, matcher:, io: $stdout)
+        records = SkaterGar.combine(read(path)).map do |row|
+          {source: :evolving_hockey, name: row.player, position: row.position,
+           team: (row.teams.one? ? row.teams.first : nil)}
+        end
+        result = Identity::UnmatchedReport.build(matcher, records)
+        io&.print(result.to_text)
+        result
+      end
+
       # Imports skater GAR rows from CSV text.
       #
       # @param text [String] the CSV, header row first

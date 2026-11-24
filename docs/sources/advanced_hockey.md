@@ -28,6 +28,15 @@ rows.first.war    # => 0.9
 SkaterGar.combine(rows) # one row per player and season, whichever grouping you exported
 ```
 
+To see which players didn't match a canonical ID, pass a matcher built from known players (usually
+NHL rosters). `report` prints the rows that need a look and returns the full report (ADR 0030):
+
+```ruby
+matcher = SportsIngest::Identity::Matcher.new(SportsIngest::NHL::Rosters.new.fetch("VAN"))
+report = SkaterGarImport.report("~/hockey/EH_gar_sk_stats_regular_2026-11-23.csv", matcher: matcher)
+File.write("unmatched.csv", report.to_csv) # the same rows as CSV
+```
+
 Grouped by team, a traded player has a row per team, but EH drops short stints from that view, so
 use the season grouping for exact totals. Columns are matched by name (`EVO_GAR` or `EVO GAR`), so
 a spreadsheet tab saved as CSV works too; a missing column raises
