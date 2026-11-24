@@ -4,9 +4,10 @@ module SportsIngest
   module NHL
     # Team rosters from +/roster/{TEAM}/{season}+, as {Player} models.
     #
-    # A past season's roster is the NHL's snapshot of the team after that season, offseason
-    # trades included: it isn't everyone who played for the team that year, and can list players
-    # who never did (+docs/sources/nhl.md+). The current roster is the team as of today.
+    # A past season's roster is the NHL's snapshot of the team at the start of that offseason
+    # (around June 30), trades up to then included: it isn't everyone who played for the team
+    # that year, can list players who never did, and may or may not list expiring contracts,
+    # depending on the season (+docs/sources/nhl.md+). The current roster is the team as of today.
     #
     # Each roster is also written to the processed cache under
     # +nhl/rosters/<TRI_CODE>/<season ID or "current">+, so consumers can read it with
