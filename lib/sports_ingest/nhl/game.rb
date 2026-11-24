@@ -127,7 +127,60 @@ module SportsIngest
         [home_team.id, away_team.id].include?(id)
       end
 
+      # Unknown codes already warned about, as +[field, code]+ pairs.
+      WARNED = Set.new
+
       class << self
+        # @api private
+        # Builds a game from one entry of an NHL schedule or score payload, warning once per
+        # process about codes the gem doesn't know.
+        #
+        # @param game [Hash] the NHL's game object
+        # @param date [Date, String] the game date (schedule weeks keep it on the day, not the game)
+        # @return [Game]
+        # @raise [SourceChangedError] if a field is missing or the wrong type
+        def parse(game, date:)
+          codes = {game_type: game.fetch("gameType"), state: game.fetch("gameState"),
+                   schedule_state: game.fetch("gameScheduleState"),
+                   ended_in: game.dig("gameOutcome", "lastPeriodType")}.compact
+          built = new(
+            id: game.fetch("id"),
+            season: Integer(game.fetch("season").to_s[0, 4]),
+            date: date,
+            start_time: game.fetch("startTimeUTC"),
+            venue: game.dig("venue", "default"),
+            neutral_site: game.fetch("neutralSite", false),
+            home_team: parse_side(game.fetch("homeTeam")),
+            away_team: parse_side(game.fetch("awayTeam")),
+            codes: codes,
+            **codes.to_h { |field, code| [field, from_code(field, code)] }
+          )
+          codes.each { |field, code| warn_unknown(field, code, built.id) }
+          built
+        rescue ArgumentError, KeyError, TypeError, NoMethodError => e
+          id = game["id"] if game.is_a?(Hash)
+          raise SourceChangedError.new("NHL game #{id.inspect} isn't shaped as expected: #{e.message}",
+            source: Client::SOURCE)
+        end
+
+        # @api private
+        # Warns once per process for a field and code the gem doesn't know.
+        #
+        # @param field [Symbol] a key of {CODED_FIELDS}
+        # @param code [String, Integer] the NHL's code
+        # @param game_id [String] the game it turned up in, for the message
+        # @return [void]
+        def warn_unknown(field, code, game_id)
+          return if known_code?(field, code)
+
+          key = [field, code]
+          return if WARNED.include?(key)
+
+          WARNED << key
+          Kernel.warn("sports_ingest: NHL game #{game_id} has an unknown #{field} code #{code.inspect}; " \
+            "it reads as #{from_code(field, code).inspect} (see Game#codes)")
+        end
+
         # The symbol for one of the NHL's codes.
         #
         # @param field [Symbol] a key of {CODED_FIELDS}
@@ -205,6 +258,12 @@ module SportsIngest
           raise ArgumentError, "start_time must be a Time or String, got #{value.inspect}" unless value.is_a?(String)
 
           Time.parse(value).getutc
+        end
+
+        private
+
+        def parse_side(team)
+          {id: team.fetch("id"), tri_code: team.fetch("abbrev"), score: team["score"]}
         end
       end
     end
