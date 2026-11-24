@@ -5,7 +5,8 @@
   keys, by hand with `curl`, during the 2026-27 regular season. The stats `skater/summary`
   call, `/standings/2026-11-22` and the stats `/team` list were also recorded as fixtures on
   2026-11-22 (`spec/fixtures/cassettes/nhl/`). `/schedule/2026-11-16`, `/club-schedule/TOR/week/2026-11-16`
-  and `.../2026-11-23`, and `/club-schedule/TOR/month/2026-11` were recorded on 2026-11-23.
+  and `.../2026-11-23`, and `/club-schedule/TOR/month/2026-11` were recorded on 2026-11-23, and `/score/now` (redirecting
+  to `/score/2026-11-23`, one game live) the evening of 2026-11-23.
 - **Default raw-cache TTL:** 3600 seconds (`SPORTS_INGEST_TTL_NHL`); live-game calls will want far
   less (the polling helper, M2-10).
 
@@ -21,8 +22,8 @@ Two public hosts, neither documented by the NHL. Both sit behind Cloudflare.
 | `/club-schedule-season/{TEAM}/{season}` | one team's season, e.g. `TOR/20252026` (~190 KB) | M2-02 |
 | `/club-schedule/{TEAM}/week/{YYYY-MM-DD}` | one team's games in the 7 days from that date (~6 KB) | M2-02 |
 | `/club-schedule/{TEAM}/month/{YYYY-MM}` | one team's games in that month (~26 KB) | M2-02 |
-| `/score/{YYYY-MM-DD}` | that day's games with `gameState`, `clock`, `period`, `goals` | M2-03 |
-| `/scoreboard/now` | lighter current-scores view across a few days | M2-03 |
+| `/score/{YYYY-MM-DD}`, `/score/now` | that day's games with `gameState`, scores, `clock`, `periodDescriptor`, `goals` (~25 to 40 KB) | M2-03 |
+| `/scoreboard/now` | several days of games around today (~160 KB); not used, `/score` is lighter | — |
 | `/gamecenter/{gameId}/landing` | game summary | M2-04 |
 | `/gamecenter/{gameId}/boxscore` | box score | M2-04 |
 | `/gamecenter/{gameId}/play-by-play` | every event, including goals with strength and assists | M2-05 |
@@ -88,6 +89,13 @@ seconds at most while live.
   `gameState` runs `FUT`, `PRE`, `LIVE` (`CRIT` late in close games), `FINAL`, then `OFF` when
   stats are official. The gem reads codes it doesn't know as `:unknown` (`:other` for
   `gameType`) and warns, rather than failing (ADR 0017).
+- **Scores (`/score/{date}`):** each game carries `gameDate`, unlike schedule weeks. `clock`
+  (`secondsRemaining`, `running`, `inIntermission`), `period` and `periodDescriptor`
+  (`number`, `periodType` `REG`/`OT`/`SO`) are absent until the game starts (`FUT`, `PRE`); a final
+  game keeps its last period and a `00:00` clock. A shootout is period 5 with `periodType` `SO`.
+  Teams carry `sog` (shots on goal) and `goals` lists every goal with scorer and assists; the gem
+  leaves both to M2-04 and M2-05. `/score/now` redirects to the NHL's current date (ET), which can
+  differ from the caller's local date late at night.
 - **2026-27 has 84 regular-season games per team** (82 before), plus preseason games, some
   split-squad (`homeSplitSquad`), in the club schedule.
 - **Standings rows have no team ID.** Map `teamAbbrev` through `SportsIngest::Teams` (M2-06 does).

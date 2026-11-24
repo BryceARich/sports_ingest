@@ -32,5 +32,22 @@ module SportsIngest
     def self.schedule(date: nil, from: nil, to: nil, team: nil, season: nil, month: nil, client: nil)
       Schedule.new(client: client).fetch(date: date, from: from, to: to, team: team, season: season, month: month)
     end
+
+    # Today's (or one day's) games with scores, state, period and clock, in one request. See
+    # {Scoreboard} for the details.
+    #
+    # @param date [Date, String, nil] the game date, +YYYY-MM-DD+; +nil+ means the NHL's current date
+    # @param client [Client, nil] what the NHL is read through; +nil+ means a new {Client} that
+    #   keeps scores fresh for {Scoreboard::TTL} seconds
+    # @return [Array<GameScore>] sorted by start time
+    # @raise [ArgumentError] if +date+ isn't a Date or +YYYY-MM-DD+
+    # @raise [SourceChangedError] if the NHL's payload isn't shaped as expected
+    # @raise [HTTPError, ParseError] if the request fails
+    # @example
+    #   SportsIngest::NHL.scores.select(&:live?).map(&:clock)
+    #   SportsIngest::NHL.scores(date: "2026-11-22").count(&:final?)
+    def self.scores(date: nil, client: nil)
+      Scoreboard.new(client: client).on(date)
+    end
   end
 end

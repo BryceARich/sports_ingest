@@ -34,9 +34,12 @@ module SportsIngest
       #   {HTTP::Client} for +:nhl+
       # @param configuration [Configuration, nil] settings to read; +nil+ means
       #   {SportsIngest.configuration} at request time
-      def initialize(http: nil, configuration: nil)
+      # @param ttl [Integer, nil] seconds a raw-cache entry stays fresh; +nil+ means the +:nhl+ TTL.
+      #   Ignored when +http:+ is given.
+      # @raise [ConfigurationError] if +ttl+ isn't a non-negative Integer
+      def initialize(http: nil, configuration: nil, ttl: nil)
         @http = http || Cache::Raw.new(client: HTTP::Client.new(source: SOURCE, configuration: configuration),
-          configuration: configuration)
+          configuration: configuration, ttl: ttl)
       end
 
       # Fetches a web API path and parses the JSON body.
