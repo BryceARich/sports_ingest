@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 # Lists issues that are ready to start (all blockers merged, milestone open, not already taken).
+# Each READY line ends with the model a session should use (see `model_for` in lib/issues.rb).
 #
 #   script/claude/ready-issues            # ready issues only
 #   script/claude/ready-issues --all      # also show skipped issues and why
@@ -29,7 +30,7 @@ if ARGV[0] == "--check"
 end
 
 ready, skipped = classify
-ready.each { |r| puts "READY  ##{r[:issue]["number"]}  #{label(r[:issue])}  #{r[:branch]}" }
+ready.each { |r| puts "READY  ##{r[:issue]["number"]}  #{label(r[:issue])}  #{r[:branch]}  #{model_for(r[:issue])}" }
 puts "(none ready)" if ready.empty?
 if ARGV.include?("--all")
   skipped.each { |s| puts "skip   ##{s[:issue]["number"]}  #{label(s[:issue])}  #{s[:reason]}" }

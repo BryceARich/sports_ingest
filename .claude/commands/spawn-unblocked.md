@@ -1,5 +1,6 @@
 ---
 description: Start a Claude desktop app session (own worktree, Remote Control on) for each issue whose blockers have merged
+model: claude-haiku-5-5
 argument-hint: "[max sessions, default 3] [--dry-run]"
 allowed-tools: Bash(script/claude/ready-issues:*), mcp__ccd_session__start_session, mcp__ccd_session_mgmt__set_remote_control
 ---
@@ -18,13 +19,13 @@ creates each worktree, and each session reads its own issue.
 ## 1. Find ready issues
 
 Run `script/claude/ready-issues`. Each `READY` line is
-`READY  #<N>  <label>  <branch>`. Take the first `max` lines in order. If none are ready, or with
+`READY  #<N>  <label>  <branch>  <model>`. Take the first `max` lines in order. If none are ready, or with
 `--dry-run`, print the lines and stop.
 
 ## 2. Start one session per issue
 
 For each one, call `mcp__ccd_session__start_session` with `initiation: "user_asked"`,
-`context: "fresh"`, `use_worktree: true`, `name: "<branch>"` (cut to 24 characters),
+`context: "fresh"`, `use_worktree: true`, `model: "<model>"` (the line's last column, don't choose your own), `name: "<branch>"` (cut to 24 characters),
 `title: "<label> <issue title> (#<N>)"`, and:
 
 - `background`: "`sports_ingest` is a Ruby gem that reads sports data into cached Ruby models.
