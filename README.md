@@ -121,6 +121,27 @@ mcdavid.birth_date  # => #<Date: 1997-01-13>
 
 Each roster is also saved to the processed cache under `nhl/rosters/<TEAM>/<20242025 or current>`.
 
+### NHL player details and game logs
+
+```ruby
+require "sports_ingest/nhl"
+
+mcdavid = SportsIngest::NHL.player(8478402)
+mcdavid.player.birth_date               # => #<Date: 1997-01-13>; the same Player a roster gives
+mcdavid.player.shoots_catches           # => "L"
+mcdavid.draft.overall_pick              # => 1
+mcdavid.career_regular_season.points    # career NHL totals; also career_playoffs
+mcdavid.nhl_seasons.map(&:season)       # one StatLine per NHL season and team; seasons has every league
+
+log = SportsIngest::NHL.game_log(8478402, season: 2025)  # 2025-26 regular season, oldest game first
+SportsIngest::NHL.game_log(8478402, season: 2025, game_type: :playoffs)
+SportsIngest::NHL.game_log(8478402)                      # the NHL's current log (this season, or the playoffs)
+log.first.toi_seconds                   # skater and goalie stats share GameLogEntry; the rest are nil
+```
+
+Details are saved to the processed cache under `nhl/players/<id>`, game logs under
+`nhl/game_logs/<id>/<20252026>/<regular or playoffs>`.
+
 ### Evolving-Hockey skater GAR
 
 Download EH's skater GAR table as CSV (`EH_gar_sk_stats_regular_<date>.csv`) into a folder
