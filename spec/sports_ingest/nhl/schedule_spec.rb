@@ -28,12 +28,7 @@ RSpec.describe SportsIngest::NHL::Schedule do
      "homeTeam" => {"id" => 10, "abbrev" => "TOR"}, "awayTeam" => {"id" => 8, "abbrev" => "MTL"}}.merge(overrides)
   end
 
-  # One interaction per week (2026-11-16 and 2026-11-23), shared by these examples: a date only
-  # needs the first, and the team filter reads the range twice. Re-recording writes a copy per
-  # request, so keep one of each afterwards.
-  describe "recorded payloads",
-    vcr: {cassette_name: "nhl/schedule_weeks_2026_11_16_and_23", allow_unused_http_interactions: true,
-          allow_playback_repeats: true} do
+  describe "a recorded league week", vcr: {cassette_name: "nhl/schedule_week_2026_11_16"} do
     it "returns one date's games as Game models" do
       games = SportsIngest::NHL.schedule(date: "2026-11-16", client: client)
 
@@ -53,23 +48,10 @@ RSpec.describe SportsIngest::NHL::Schedule do
       expect(game.home_team.team).to be_a(SportsIngest::Team)
     end
 
-    it "follows nextStartDate across weeks and keeps only the range" do
-      games = schedule.between("2026-11-16", "2026-11-24")
+    it "keeps only the range's dates from the week" do
+      games = schedule.between("2026-11-16", "2026-11-18")
 
-      expect(games.map(&:date).uniq.sort).to eq((Date.new(2026, 11, 16)..Date.new(2026, 11, 24)).select do |day|
-        games.any? { |g| g.date == day }
-      end)
-      expect(games.map(&:date).minmax).to eq([Date.new(2026, 11, 16), Date.new(2026, 11, 24)])
-      expect(a_request(:get, "#{base}/schedule/2026-11-23")).to have_been_made.once
-    end
-
-    it "filters a range to one team, by any of its codes" do
-      leafs = SportsIngest::Teams.fetch("TOR")
-      games = schedule.between("2026-11-16", "2026-11-24", team: "tor")
-
-      expect(games).not_to be_empty
-      expect(games).to all(satisfy { |g| g.involves?(leafs) })
-      expect(games).to eq(schedule.between("2026-11-16", "2026-11-24", team: leafs))
+      expect(games.map(&:date).minmax).to eq([Date.new(2026, 11, 16), Date.new(2026, 11, 18)])
     end
 
     it "round-trips through the processed cache" do
@@ -82,21 +64,55 @@ RSpec.describe SportsIngest::NHL::Schedule do
     end
   end
 
-  describe "#for_team", vcr: {cassette_name: "nhl/club_schedule_season_tor_20262027"} do
-    it "returns a team's season, preseason included" do
+  # Recorded cassettes hold one interaction per URL. Examples that ask twice replay it
+  # (allow_playback_repeats); re-recording writes a copy per request, so trim those afterwards.
+  describe "a recorded team range",
+    vcr: {cassette_name: "nhl/club_schedule_tor_weeks_2026_11_16_and_23", allow_playback_repeats: true} do
+    it "reads the team's own weeks, following nextStartDate, by any of its codes" do
+      leafs = SportsIngest::Teams.fetch("TOR")
+      games = schedule.between("2026-11-16", "2026-11-24", team: "tor")
+
+      expect(games).not_to be_empty
+      expect(games).to all(satisfy { |g| g.involves?(leafs) })
+      expect(games.map(&:date).minmax.map(&:month)).to eq([11, 11])
+      expect(games.map(&:date)).to include(Date.new(2026, 11, 17))
+      expect(games).to eq(SportsIngest::NHL.schedule(from: "2026-11-16", to: "2026-11-24", team: leafs, client: client))
+      expect(a_request(:get, "#{base}/club-schedule/TOR/week/2026-11-23")).to have_been_made.twice
+      expect(a_request(:get, %r{#{base}/schedule/})).not_to have_been_made
+    end
+  end
+
+  describe "a recorded team month",
+    vcr: {cassette_name: "nhl/club_schedule_tor_month_2026_11", allow_playback_repeats: true} do
+    it "returns the team's games in that month" do
+      games = SportsIngest::NHL.schedule(team: "TOR", month: "2026-11", client: client)
+
+      expect(games.size).to eq(13)
+      expect(games.map(&:date).map { |d| [d.year, d.month] }.uniq).to eq([[2026, 11]])
+      expect(games).to all(satisfy { |g| g.involves?("10") })
+      expect(schedule.for_team("TOR", month: Date.new(2026, 11, 30))).to eq(games)
+    end
+  end
+
+  describe "#for_team with a season" do
+    it "reads the club season, preseason included" do
+      season = [game_json("id" => 2026010006, "gameType" => 1, "gameDate" => "2026-09-19",
+        "startTimeUTC" => "2026-09-19T23:00:00Z"), game_json("gameDate" => "2026-11-23")]
+      stub_request(:get, "#{base}/club-schedule-season/TOR/20262027")
+        .to_return(status: 200, headers: json, body: JSON.generate("games" => season))
+
       games = SportsIngest::NHL.schedule(team: "TOR", season: 2026, client: client)
 
-      expect(games.count { |g| g.game_type == :regular }).to eq(84)
-      expect(games.map(&:game_type).uniq).to include(:preseason)
-      expect(games).to all(satisfy { |g| g.involves?("10") })
-      expect(games.first.date).to eq(Date.new(2026, 9, 19))
+      expect(games.map(&:game_type)).to eq(%i[preseason regular])
+      expect(games.map(&:date)).to eq([Date.new(2026, 9, 19), Date.new(2026, 11, 23)])
     end
   end
 
   describe "#fetch" do
     it "rejects keyword combinations it doesn't take" do
       [{}, {date: "2026-11-16", from: "2026-11-16", to: "2026-11-17"}, {from: "2026-11-16"},
-        {season: 2026}, {season: 2026, team: "TOR", date: "2026-11-16"}].each do |args|
+        {season: 2026}, {month: "2026-11"}, {season: 2026, team: "TOR", date: "2026-11-16"},
+        {season: 2026, month: "2026-11", team: "TOR"}].each do |args|
         expect { schedule.fetch(**args) }.to raise_error(ArgumentError), args.inspect
       end
     end
@@ -106,6 +122,8 @@ RSpec.describe SportsIngest::NHL::Schedule do
     expect { schedule.on("11/16/2026") }.to raise_error(ArgumentError, /YYYY-MM-DD/)
     expect { schedule.between("2026-11-17", "2026-11-16") }.to raise_error(ArgumentError, /after/)
     expect { schedule.for_team("TOR", season: 20262027.0) }.to raise_error(ArgumentError, /season/)
+    expect { schedule.for_team("TOR", month: "2026-13") }.to raise_error(ArgumentError, /YYYY-MM/)
+    expect { schedule.for_team("TOR") }.to raise_error(ArgumentError, /season/)
   end
 
   it "raises NotFound for an unknown team" do

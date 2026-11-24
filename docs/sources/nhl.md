@@ -4,8 +4,8 @@
 - **Last verified:** 2026-11-22: every endpoint below returned 200 with the expected top-level
   keys, by hand with `curl`, during the 2026-27 regular season. The stats `skater/summary`
   call, `/standings/2026-11-22` and the stats `/team` list were also recorded as fixtures on
-  2026-11-22 (`spec/fixtures/cassettes/nhl/`). `/schedule/2026-11-16`, `/schedule/2026-11-23` and
-  `/club-schedule-season/TOR/20262027` were recorded on 2026-11-23.
+  2026-11-22 (`spec/fixtures/cassettes/nhl/`). `/schedule/2026-11-16`, `/club-schedule/TOR/week/2026-11-16`
+  and `.../2026-11-23`, and `/club-schedule/TOR/month/2026-11` were recorded on 2026-11-23.
 - **Default raw-cache TTL:** 3600 seconds (`SPORTS_INGEST_TTL_NHL`); live-game calls will want far
   less (the polling helper, M2-10).
 
@@ -18,7 +18,9 @@ Two public hosts, neither documented by the NHL. Both sit behind Cloudflare.
 | Path | Returns | Issue |
 |---|---|---|
 | `/schedule/{YYYY-MM-DD}` | the week (`gameWeek`) starting on that date | M2-02 |
-| `/club-schedule-season/{TEAM}/{season}` | one team's season, e.g. `TOR/20252026` | M2-02 |
+| `/club-schedule-season/{TEAM}/{season}` | one team's season, e.g. `TOR/20252026` (~190 KB) | M2-02 |
+| `/club-schedule/{TEAM}/week/{YYYY-MM-DD}` | one team's games in the 7 days from that date (~6 KB) | M2-02 |
+| `/club-schedule/{TEAM}/month/{YYYY-MM}` | one team's games in that month (~26 KB) | M2-02 |
 | `/score/{YYYY-MM-DD}` | that day's games with `gameState`, `clock`, `period`, `goals` | M2-03 |
 | `/scoreboard/now` | lighter current-scores view across a few days | M2-03 |
 | `/gamecenter/{gameId}/landing` | game summary | M2-04 |
@@ -77,7 +79,10 @@ seconds at most while live.
 - **Schedule weeks start on the date asked for.** `/schedule/{date}` returns seven days from
   that date (`gameWeek`), and `nextStartDate` is the day after the last one. Games in a week have
   no `gameDate`; the day's `date` is the game date, local to the venue (a late Pacific start falls
-  on the next day in `startTimeUTC`). Club schedules carry `gameDate` on each game.
+  on the next day in `startTimeUTC`). Club schedules carry `gameDate` on each game. A club
+  week's `nextStartDate` jumps over the off-season (`week/2026-07-01` → `2026-09-16`), and the
+  club month's `nextMonth` likewise skips empty months. `club-schedule-season` ignores query
+  parameters such as `startDate`; use the week or month endpoints for less.
 - **Scores and outcomes appear once a game starts.** `homeTeam.score` / `awayTeam.score` are
   absent before then; `gameOutcome.lastPeriodType` (`REG`, `OT`, `SO`) is there once it's final.
   `gameState` runs `FUT`, `PRE`, `LIVE` (`CRIT` late in close games), `FINAL`, then `OFF` when

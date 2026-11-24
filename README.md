@@ -67,6 +67,7 @@ game.start_time     # => 2026-11-24 00:00:00 UTC; game.date is the local date, 2
 game.state          # => :scheduled, then :pregame, :live, :final
 
 SportsIngest::NHL.schedule(from: "2026-11-23", to: "2026-11-30", team: "TOR") # a range, one team
+SportsIngest::NHL.schedule(team: "TOR", month: "2026-11")
 SportsIngest::NHL.schedule(team: "TOR", season: 2026) # 2026-27, preseason and playoffs included
 ```
 
