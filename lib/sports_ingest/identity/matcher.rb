@@ -4,7 +4,8 @@ require "date"
 
 module SportsIngest
   module Identity
-    # Resolves a source's player record to a canonical player, in tiers (ADR 0028):
+    # Resolves a source's player record to a canonical player. A manual override wins outright
+    # (ADR 0029, +:override+). Otherwise, in tiers (ADR 0028):
     #
     # 1. the source's own ID, already on a known player's {PlayerRef} (+:exact+)
     # 2. name key ({NameNormalizer.key}) and birth date (+:high+)
@@ -40,9 +41,11 @@ module SportsIngest
       # @param players [Enumerable<#ref, #full_name, #birth_date, #position, #team>] the known
       #   players, such as {NHL::Player}s; +birth_date+, +position+ and +team+ may be +nil+.
       #   A player listed twice (same canonical ID) is kept once.
-      # @raise [ArgumentError] if there are no players, they're from more than one sport, or two
-      #   players share a source ID
-      def initialize(players)
+      # @param overrides [Overrides] manual decisions, checked before any tier (ADR 0029); an
+      #   override may name a player who isn't in +players+
+      # @raise [ArgumentError] if there are no players, they're from more than one sport, two
+      #   players share a source ID, or an override's canonical ID isn't valid for the sport
+      def initialize(players, overrides: Overrides.new)
         pairs = players.map { |player| [coerce_ref(player), player] }.uniq { |ref, _| ref.key }
         raise ArgumentError, "a matcher needs at least one known player" if pairs.empty?
 
@@ -50,8 +53,11 @@ module SportsIngest
         raise ArgumentError, "known players span sports: #{sports.join(", ")}" if sports.size > 1
 
         @sport = sports.first
+        overrides.canonical_ids.each { |canonical_id| PlayerRef.new(sport: @sport, canonical_id: canonical_id) }
+        @overrides = overrides
         @known = pairs.map { |ref, player| known(ref, player) }
         @by_key = @known.group_by(&:key)
+        @by_canonical = @known.to_h { |entry| [entry.ref.canonical_id, entry] }
         @by_source_id = index_source_ids
       end
 
@@ -70,6 +76,10 @@ module SportsIngest
       def match(source:, name:, id: nil, birth_date: nil, position: nil, team: nil)
         source = source.to_sym
         id = PlayerRef.coerce_id(id) unless id.nil?
+        if (override = @overrides.find(source: source, name: name, id: id))
+          return overridden(*override, source, id)
+        end
+
         by_id = id && @by_source_id[[source, id]]
         return found(by_id, :source_id, "#{source} ID #{id}", source, id) if by_id
 
@@ -125,6 +135,15 @@ module SportsIngest
       # True when either side is unknown or both are in the same position group.
       def compatible?(left, right)
         left.nil? || right.nil? || left == right
+      end
+
+      # The player an override names: a known player when there is one, otherwise a ref built from
+      # the canonical ID alone.
+      def overridden(canonical_id, label, source, id)
+        entry = @by_canonical[canonical_id]
+        ref = entry ? entry.ref : PlayerRef.new(sport: @sport, canonical_id: canonical_id)
+        ref = ref.with_source_id(source, id) if id && source != ref.canonical_source
+        Match.new(ref: ref, reason: :override, detail: "override of #{label} to #{canonical_id}")
       end
 
       def found(entry, reason, label, source, id)
