@@ -2,7 +2,7 @@
 
 require "sports_ingest/espn"
 
-RSpec.describe SportsIngest::ESPN::Client do
+RSpec.describe SportsIngest::ESPN::Read::Client do
   subject(:espn) { described_class.new(game: :hockey, http: http, configuration: config) }
 
   let(:config) { SportsIngest::Configuration.new(env: {}).tap { |c| c.raw_cache = :off } }

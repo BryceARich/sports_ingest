@@ -2,7 +2,7 @@
 
 require "sports_ingest/espn"
 
-RSpec.describe SportsIngest::ESPN::Filter do
+RSpec.describe SportsIngest::ESPN::Read::Filter do
   describe ".players" do
     it "spells each option the way ESPN does" do
       filter = described_class.players(limit: 50, offset: 100, ids: [1, 2], status: [:free_agent, :waivers],
