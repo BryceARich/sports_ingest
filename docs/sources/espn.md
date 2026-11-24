@@ -29,6 +29,14 @@ espn.get_json("seasons/2027/players", views: ["kona_player_info"],
 
 Hockey seasons are named by the year they end (2026-27 is `2027`), football by the year it starts.
 
+Every player's actual season totals, as raw stat lines (ESPN's stat IDs, unscored), with the same
+`seasons:` / `last:` convention as the NHL (default `last: 3`):
+
+```ruby
+pool = SportsIngest::ESPN::PlayerPool.new(game: :hockey)
+pool.actual_stats(last: 3, limit: 500).select { it.season == 2026 }.first.stats # => {"13" => 1.0, ...}
+```
+
 ## Endpoints used
 
 Base: `https://lm-api-reads.fantasy.espn.com/apis/v3/games/{game}`, where `game` is `fhl`
@@ -39,7 +47,7 @@ Base: `https://lm-api-reads.fantasy.espn.com/apis/v3/games/{game}`, where `game`
 |---|---|---|
 | `/seasons/{year}` | game metadata for the season | M4-01 |
 | `/seasons/{year}/segments/0/leagues/{leagueId}?view=...` | a league, shaped by `view` | M4-02, M4-05, M4-06 |
-| `/seasons/{year}/players?view=kona_player_info` | the player pool, filtered by `X-Fantasy-Filter` | M4-03, M4-04 |
+| `/seasons/{year}/players?view=kona_player_info` | the player pool, filtered by `X-Fantasy-Filter` | M4-03 (`PlayerPool`), M4-04 |
 | `/leagueHistory/{leagueId}?seasonId={year}` | past seasons of a league | M4-05 |
 
 `view` values come up per issue (`mSettings`, `mTeam`, `mRoster`, `mDraftDetail`, ...); add each one
@@ -66,6 +74,19 @@ The `X-Fantasy-Filter` header is JSON, e.g. `{"players":{"limit":50}}`. Build it
 curl -s -H 'X-Fantasy-Filter: {"players":{"limit":1}}' \
   'https://lm-api-reads.fantasy.espn.com/apis/v3/games/fhl/seasons/2027/players?view=kona_player_info'
 ```
+
+## Player pool stats (M4-03)
+
+Checked 2026-11-23 against the live endpoint, reading only the response's shape (ADR 0034).
+
+- The response is a JSON **array** of players, each with `id`, `fullName`, `proTeamId`,
+  `defaultPositionId` and a `stats` array.
+- A player's **season total** is the `stats` entry with `statSourceId` 0 (actual), `statSplitTypeId` 0
+  and `scoringPeriodId` 0. Projections are `statSourceId` 1; weekly rows have other scoring periods.
+  The stat-ID keys (`"13"`, `"25"`, ...) are ESPN's and aren't mapped to names.
+- **Floors:** ESPN answers 404 for seasons it doesn't keep: hockey 2005 (404) vs 2008 (200), football
+  2000 (404) vs 2005 (200). The client raises `SportsIngest::NotFound` naming the season.
+- **Season IDs:** hockey 2026-27 is `2027`; football 2026 is `2026`.
 
 ## Auth
 
