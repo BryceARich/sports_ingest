@@ -138,8 +138,9 @@ seconds at most while live.
   `savePct` and `timeOnIce` (total seconds, an integer) and have no position. Without `sort` the
   order isn't stable across pages; the gem sorts by `playerId`. A regular season is ~800 to 950
   skaters (~10 pages) and ~100 goalies (1 to 2 pages). `cayenneExp` also takes ranges
-  (`seasonId>=20242025 and seasonId<=20252026`), unused. Recorded as `nhl/stats_goalie_summary_2022_to_2026_regular`
-  and `nhl/stats_skater_summary_2025_playoffs` on 2026-11-23.
+  (`seasonId>=20242025 and seasonId<=20252026`), unused. Playoff goalie tables (~25-28 rows, one page) are
+  recorded as `nhl/stats_goalie_summary_2022_to_2026_playoffs` on 2026-11-23 to keep the cassette
+  small; skater fields are checked against `nhl/stats_skater_summary_limit_1`.
 - **Shapes change between seasons** without notice. Re-record fixtures at the start of each
   season and update the date above.
 

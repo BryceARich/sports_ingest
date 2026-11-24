@@ -26,16 +26,18 @@ RSpec.describe SportsIngest::NHL::SeasonStats do
     )).to_return(headers: {"Content-Type" => "application/json"}, body: {data: rows, total: total}.to_json)
   end
 
-  context "with recorded goalie tables for 2022-23 to 2026-27",
-    vcr: {cassette_name: "nhl/stats_goalie_summary_2022_to_2026_regular", allow_playback_repeats: true} do
+  # Playoff tables keep the recording small: ~25-28 goalies a season, one page each.
+  context "with recorded playoff goalie tables for 2022-23 to 2026-27",
+    vcr: {cassette_name: "nhl/stats_goalie_summary_2022_to_2026_playoffs", allow_playback_repeats: true} do
     it "loads last: 5 and last: 3 with NHL ids, one row per goalie per season" do
-      five = stats.goalies(last: 5)
-      three = stats.goalies(last: 3)
+      five = stats.goalies(last: 5, game_type: :playoffs)
+      three = stats.goalies(last: 3, game_type: :playoffs)
 
-      expect(five.map(&:season).uniq).to eq([2022, 2023, 2024, 2025, 2026])
-      expect(three.map(&:season).uniq).to eq([2024, 2025, 2026])
+      # The 2026-27 playoffs haven't started, so the current season comes back empty.
+      expect(five.map(&:season).uniq).to eq([2022, 2023, 2024, 2025])
+      expect(three.map(&:season).uniq).to eq([2024, 2025])
       expect(three).to eq(five.select { it.season >= 2024 })
-      expect(five).to all(have_attributes(position: "G", game_type: :regular, player_id: match(/\A\d{7}\z/)))
+      expect(five).to all(have_attributes(position: "G", game_type: :playoffs, player_id: match(/\A\d{7}\z/)))
       expect(five.group_by(&:season).values).to all(satisfy { |rows| rows.map(&:player_id).uniq.size == rows.size })
 
       line = five.select { it.season == 2024 }.max_by { it.stats.games_played }.stats
@@ -46,17 +48,16 @@ RSpec.describe SportsIngest::NHL::SeasonStats do
     end
   end
 
-  context "with a recorded skater playoff table for 2025-26", vcr: {cassette_name: "nhl/stats_skater_summary_2025_playoffs"} do
-    it "pages through every skater and parses their totals" do
-      rows = stats.skaters(seasons: [2025], game_type: :playoffs)
+  context "with a recorded skater row", vcr: {cassette_name: "nhl/stats_skater_summary_limit_1"} do
+    it "parses a real skater/summary row" do
+      payload = client.stats_json("skater/summary", params: {limit: 1, cayenneExp: "seasonId=20252026 and gameTypeId=2"})
+      row = stats.parse_page(payload, kind: :skaters, game_type: :regular).first
 
-      expect(rows.size).to be > 100
-      expect(rows.map(&:player_id).uniq.size).to eq(rows.size)
-      expect(rows).to all(have_attributes(season: 2025, game_type: :playoffs, goalie?: false))
-      top = rows.max_by { it.stats.points }.stats
-      expect(top.points).to eq(top.goals + top.assists)
-      expect(top.avg_toi_seconds).to be_between(10 * 60, 30 * 60)
-      expect(top.wins).to be_nil
+      expect(row).to have_attributes(player_id: match(/\A\d+\z/), season: 2025, game_type: :regular, goalie?: false)
+      expect(row.teams).not_to be_empty
+      expect(row.stats.points).to eq(row.stats.goals + row.stats.assists)
+      expect(row.stats.avg_toi_seconds).to be_between(5 * 60, 30 * 60)
+      expect(row.stats.wins).to be_nil
     end
   end
 
