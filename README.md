@@ -82,6 +82,10 @@ live = scores.find(&:live?)
 live.period         # => 1 (4 is overtime, 5 a shootout in the regular season)
 live.clock          # => "08:16"; also seconds_remaining, clock_running, in_intermission
 live.game           # => the NHL::Game, as the schedule returns it
+live.phase          # => :regulation; or :pre, :intermission, :overtime, :shootout, :final
+live.home_shots     # => 10 (shots on goal; away_shots too)
+live.power_play     # => :away, :home or nil
+live.situation&.strength(:away) # => "5v4"; also clock (penalty time left) and empty_net
 ```
 
 Each is an `NHL::GameScore`. Scores stay fresh in the raw cache for 30 seconds

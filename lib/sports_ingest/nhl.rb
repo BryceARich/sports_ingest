@@ -33,7 +33,7 @@ module SportsIngest
       Schedule.new(client: client).fetch(date: date, from: from, to: to, team: team, season: season, month: month)
     end
 
-    # Today's (or one day's) games with scores, state, period and clock, in one request. See
+    # Today's (or one day's) games with scores, state, period, clock, shots and power plays, in one request. See
     # {Scoreboard} for the details.
     #
     # @param date [Date, String, nil] the game date, +YYYY-MM-DD+; +nil+ means the NHL's current date
