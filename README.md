@@ -71,6 +71,22 @@ SportsIngest::NHL.schedule(team: "TOR", month: "2026-11")
 SportsIngest::NHL.schedule(team: "TOR", season: 2026) # 2026-27, preseason and playoffs included
 ```
 
+### NHL scores
+
+One request for all of today's games, light enough to poll from a Pi:
+
+```ruby
+scores = SportsIngest::NHL.scores # today, by the NHL's date; or scores(date: "2026-11-22")
+live = scores.find(&:live?)
+"#{live.away_team.tri_code} #{live.away_team.score} @ #{live.home_team.tri_code} #{live.home_team.score}"
+live.period         # => 1 (4 is overtime, 5 a shootout in the regular season)
+live.clock          # => "08:16"; also seconds_remaining, clock_running, in_intermission
+live.game           # => the NHL::Game, as the schedule returns it
+```
+
+Each is an `NHL::GameScore`. Scores stay fresh in the raw cache for 30 seconds
+(`NHL::Scoreboard::TTL`), not the hour schedules get.
+
 ### NHL standings
 
 ```ruby

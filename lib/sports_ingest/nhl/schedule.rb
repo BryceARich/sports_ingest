@@ -33,8 +33,8 @@ module SportsIngest
       # A month, as +for_team(month:)+ takes it.
       MONTH = /\A\d{4}-(0[1-9]|1[0-2])\z/
 
-      # Unknown codes already warned about, as +[field, code]+ pairs.
-      WARNED = Set.new
+      # Unknown codes already warned about; the same set as {Game::WARNED}.
+      WARNED = Game::WARNED
 
       # @param client [Client, nil] what the NHL is read through; +nil+ means a new {Client}
       def initialize(client: nil)
@@ -204,42 +204,7 @@ module SportsIngest
       end
 
       def build(game, date)
-        codes = {game_type: game.fetch("gameType"), state: game.fetch("gameState"),
-                 schedule_state: game.fetch("gameScheduleState"),
-                 ended_in: game.dig("gameOutcome", "lastPeriodType")}.compact
-        built = Game.new(
-          id: game.fetch("id"),
-          season: Integer(game.fetch("season").to_s[0, 4]),
-          date: date,
-          start_time: game.fetch("startTimeUTC"),
-          venue: game.dig("venue", "default"),
-          neutral_site: game.fetch("neutralSite", false),
-          home_team: side(game.fetch("homeTeam")),
-          away_team: side(game.fetch("awayTeam")),
-          codes: codes,
-          **codes.to_h { |field, code| [field, Game.from_code(field, code)] }
-        )
-        codes.each { |field, code| warn_unknown(field, code, built.id) }
-        built
-      rescue ArgumentError => e
-        raise SourceChangedError.new("NHL game #{game["id"].inspect} isn't shaped as expected: #{e.message}",
-          source: Client::SOURCE)
-      end
-
-      # Warns once per process for each field and code the gem doesn't know.
-      def warn_unknown(field, code, game_id)
-        return if Game.known_code?(field, code)
-
-        key = [field, code]
-        return if WARNED.include?(key)
-
-        WARNED << key
-        Kernel.warn("sports_ingest: NHL game #{game_id} has an unknown #{field} code #{code.inspect}; " \
-          "it reads as #{Game.from_code(field, code).inspect} (see Game#codes)")
-      end
-
-      def side(team)
-        {id: team.fetch("id"), tri_code: team.fetch("abbrev"), score: team["score"]}
+        Game.parse(game, date: date)
       end
     end
   end
