@@ -205,7 +205,7 @@ comes back with `stale: true`. nflverse data is CC-BY-4.0: credit nflverse where
 ## Development
 
 Ruby is pinned in `.ruby-version` and installed with [mise](https://mise.jdx.dev).
-Full setup for Mac and Raspberry Pi is in [`docs/RESUME.md`](docs/RESUME.md).
+Full setup for Mac and Raspberry Pi is in [`docs/SETUP.md`](docs/SETUP.md).
 
 ```bash
 mise install          # Ruby from .ruby-version

@@ -1,7 +1,7 @@
 # CLAUDE.md
 
-**Read [`docs/RESUME.md`](docs/RESUME.md) first.** It has the current status, setup steps,
-the next issues to take, and known gotchas. This file covers the rules that don't change much.
+**Read [`docs/RESUME.md`](docs/RESUME.md) first.** It has the current status, the next issues to
+take, and known gotchas; setup is in [`docs/SETUP.md`](docs/SETUP.md). This file covers the rules that don't change much.
 
 ## What this project is
 
@@ -33,7 +33,8 @@ Design rules already decided (each has an ADR in [`docs/adr/`](docs/adr/README.m
 
 ## Commands
 
-When these commands change, update this list and `docs/RESUME.md` together.
+When these commands change, update this list and `docs/SETUP.md` together. In a
+Claude session, prefix Ruby commands with `script/claude/run` (it picks the `.ruby-version` Ruby).
 
 ```bash
 mise install                 # install the Ruby version pinned in .ruby-version
@@ -81,26 +82,10 @@ never committed), so each contributor uses their own and no account names live i
 `script/claude/identity` prints what this clone uses; follow it.
 
 - **No bot configured:** Claude uses your active `gh` account and your git identity.
-- **With a bot:** log the bot in to `gh` next to your own account (yours stays active), then:
-
-  ```bash
-  git config --local claude.botUser <bot-login>
-  git remote add bot https://<bot-login>@github.com/<owner>/<repo>.git
-  git config --local --add 'credential.https://<bot-login>@github.com.helper' ''
-  git config --local --add 'credential.https://<bot-login>@github.com.helper' \
-    '!f() { test "$1" = get && echo username=<bot-login> && echo "password=$(gh auth token --user <bot-login>)"; }; f'
-  ```
-
-  Optional: `claude.botEmail` (default: the bot's GitHub noreply address) and `claude.botRemote`
-  (default: `bot`).
-- **`gh` calls** as the bot: prefix with its token, never `gh auth switch`:
-  `GH_TOKEN=$(gh auth token --user <bot-login>) gh pr create ...`
-- **Commits** as the bot: `git -c user.name=<bot-login> -c user.email=<bot-email> commit ...`
-- **Pushes:** to the bot's remote, never `origin`: `git push -u bot <branch>`.
-- **Access:** the bot needs write access to the repo and to the project board, and a token with
-  `repo`, `project`, `read:org` and `workflow` (needed to push changes under `.github/workflows/`).
-  Keep the token to those scopes. When it expires, renew it with
-  `pbpaste | gh auth login --hostname github.com --with-token`, then `gh auth switch` back to yourself.
+- **With a bot** (setup in [`CONTRIBUTING.md`](CONTRIBUTING.md#claude-bot-account-setup)): prefix
+  `gh` calls with its token, `GH_TOKEN=$(gh auth token --user <bot-login>) gh ...`, never
+  `gh auth switch`; commit with `git -c user.name=<bot-login> -c user.email=<bot-email> commit ...`;
+  push to the bot's remote (`git push -u bot <branch>`), never `origin`.
 
 ## The licensed-data rule
 

@@ -17,8 +17,7 @@ creates each worktree, and each session reads its own issue.
 
 ## 1. Find ready issues
 
-Run `LANG=en_US.UTF-8 script/claude/ready-issues` (Ruby from `.ruby-version` must be on `PATH`;
-if `ruby -v` is the system Ruby, prefix the command with `mise exec --`). Each `READY` line is
+Run `script/claude/ready-issues`. Each `READY` line is
 `READY  #<N>  <label>  <branch>`. Take the first `max` lines in order. If none are ready, or with
 `--dry-run`, print the lines and stop.
 
@@ -44,9 +43,9 @@ For each one, call `mcp__ccd_session__start_session` with `initiation: "user_ask
   > 3. Run `script/claude/identity` once and act as the account it prints (`CLAUDE.md`, "Claude's
   >    GitHub identity"): its `gh` token prefix, commit identity and push remote. Never
   >    `gh auth switch`, never push to `main`, never merge.
-  > 4. If `ruby -v` isn't the version in `.ruby-version`, mise isn't activated in this shell:
-  >    prefix Ruby commands with `mise exec --` (run `bin/setup` once if gems are missing). Run
-  >    `script/claude/*` with `LANG=en_US.UTF-8`.
+  > 4. Prefix Ruby commands with `script/claude/run` (`script/claude/run bundle exec rspec`): it
+  >    picks the `.ruby-version` Ruby, which this shell doesn't have, and a UTF-8 locale. Run
+  >    `script/claude/run bin/setup` once if gems are missing.
   > 5. If you need a maintainer decision, ask in this session (they follow it from their phone)
   >    and also comment on the issue, leaving it In Progress.
   >

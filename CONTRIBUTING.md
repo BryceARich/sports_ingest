@@ -2,7 +2,7 @@
 
 `sports_ingest` is a small, single-maintainer project. Most changes are made by the maintainer
 or by Claude Code working on their behalf. This file is the short version of how work flows;
-the full rules are in [`CLAUDE.md`](CLAUDE.md), and setup is in [`docs/RESUME.md`](docs/RESUME.md).
+the full rules are in [`CLAUDE.md`](CLAUDE.md), and setup is in [`docs/SETUP.md`](docs/SETUP.md).
 
 ## Issues
 
@@ -61,7 +61,7 @@ Claude Code does a lot of the implementation, under the same review rules as any
   Keep both current: they're how a fresh session picks the work back up.
 - **Separate identity.** Claude can commit, push and open PRs as your own machine account, so you
   can review and approve its PRs. Set it per clone with `git config --local claude.botUser`; the
-  full setup is in [`CLAUDE.md`](CLAUDE.md). Without one, Claude uses your own account.
+  full setup is [below](#claude-bot-account-setup). Without one, Claude uses your own account.
 - **Workflow.** For an issue, Claude creates the branch, moves the issue to In Progress, makes the
   change, opens a PR from the template, and moves the issue to Awaiting Human Review.
   It doesn't merge its own PRs; the maintainer reviews and merges. `/work-issue <N>` runs this
@@ -71,3 +71,25 @@ Claude Code does a lot of the implementation, under the same review rules as any
   descriptions say they were generated with Claude Code.
 - **Limits.** Claude follows the licensed-data rule like everyone else, and stops and flags it if
   something that looks like a real export is about to be committed.
+
+### Claude bot account setup
+
+How Claude uses the account is in [`CLAUDE.md`](CLAUDE.md) ("Claude's GitHub identity"). To set
+one up for a clone:
+
+- **Log in and configure:** log the bot in to `gh` next to your own account (yours stays active), then:
+
+  ```bash
+  git config --local claude.botUser <bot-login>
+  git remote add bot https://<bot-login>@github.com/<owner>/<repo>.git
+  git config --local --add 'credential.https://<bot-login>@github.com.helper' ''
+  git config --local --add 'credential.https://<bot-login>@github.com.helper' \
+    '!f() { test "$1" = get && echo username=<bot-login> && echo "password=$(gh auth token --user <bot-login>)"; }; f'
+  ```
+
+  Optional: `claude.botEmail` (default: the bot's GitHub noreply address) and `claude.botRemote`
+  (default: `bot`).
+- **Access:** the bot needs write access to the repo and to the project board, and a token with
+  `repo`, `project`, `read:org` and `workflow` (needed to push changes under `.github/workflows/`).
+  Keep the token to those scopes. When it expires, renew it with
+  `pbpaste | gh auth login --hostname github.com --with-token`, then `gh auth switch` back to yourself.

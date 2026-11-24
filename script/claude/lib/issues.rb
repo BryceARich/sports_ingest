@@ -5,6 +5,9 @@
 require "json"
 require "open3"
 
+# Files here are UTF-8 (cassettes, docs, gh output); don't depend on the shell's locale.
+Encoding.default_external = Encoding::UTF_8
+
 module ClaudeScripts
   PROJECT = "1" # project board number, under the repo owner
   UNSCHEDULED_MILESTONE = 8 # M8 "Later" is never started automatically

@@ -15,7 +15,7 @@ include ClaudeScripts
 ALLOWED_TOOLS = %w[
   Read Edit Write Glob Grep
   Bash(git:*) Bash(gh:*) Bash(bundle:*) Bash(mise:*) Bash(ruby:*)
-  Bash(script/claude/ready-issues:*) Bash(script/claude/set-status:*)
+  Bash(script/claude/ready-issues:*) Bash(script/claude/set-status:*) Bash(script/claude/run:*)
 ].join(",")
 
 max = (ARGV.find { |a| a =~ /\A\d+\z/ } || 3).to_i

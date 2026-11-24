@@ -4,7 +4,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 if ! command -v mise >/dev/null; then
-  echo "mise not found. Install it first: see docs/RESUME.md, \"10-minute setup\"." >&2
+  echo "mise not found. Install it first: see docs/SETUP.md, \"10-minute setup\"." >&2
   exit 1
 fi
 
