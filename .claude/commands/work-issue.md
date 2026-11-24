@@ -10,7 +10,17 @@ Take issue #$ARGUMENTS from Todo to an open PR in **Awaiting Human Review**, fol
 
 **Keep token use low.** Use the `script/claude/*` helpers instead of exploring with `gh`. Ask `gh`
 only for the fields you need (`--json a,b` or `--jq`), never for full JSON dumps. Read the files the
-issue touches, not the whole tree.
+issue touches, not the whole tree, and only the parts you need (`grep -n`, then a line range).
+
+- **Ruby:** prefix Ruby commands with `script/claude/run` (`script/claude/run bundle exec rspec`).
+  It picks the `.ruby-version` Ruby, which the app's shell lacks, and a UTF-8 locale.
+- **Payloads and cassettes:** inspect them with `jq` key and path queries
+  (`jq '.games[0] | keys'`, `jq '.games[] | {id, gameState}'`), never by printing bodies; they're
+  mostly odds, links and broadcast lists.
+- **Edits:** use the Edit tool, not multi-line `sed`/heredoc/script substitutions, which fail on
+  quoting and echo the whole replacement back.
+- **Output:** pipe long command output through `tail` or `grep` for the lines that matter
+  (`rspec ... | grep -E "examples|rspec \./"`).
 
 Identity: if `GH_TOKEN` is already set (a spawned session), use plain `gh`/`git` and the remote
 your prompt names. Otherwise run `script/claude/identity` once: it prints the account to act as

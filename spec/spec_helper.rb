@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# Files here are UTF-8 (cassettes, docs, gh output); don't depend on the shell's locale.
+Encoding.default_external = Encoding::UTF_8
+
 require "sports_ingest"
 require "webmock/rspec" # no spec may reach the network
 
