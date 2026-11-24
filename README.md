@@ -146,6 +146,25 @@ log.first.toi_seconds                   # skater and goalie stats share GameLogE
 Details are saved to the processed cache under `nhl/players/<id>`, game logs under
 `nhl/game_logs/<id>/<20252026>/<regular or playoffs>`.
 
+### NHL season stat tables
+
+```ruby
+require "sports_ingest/nhl"
+
+skaters = SportsIngest::NHL.skater_stats                 # last 3 seasons, regular season (the default)
+SportsIngest::NHL.skater_stats(last: 5)
+SportsIngest::NHL.goalie_stats(seasons: [2024, 2025], game_type: :playoffs)
+
+row = skaters.max_by { it.stats.points }
+row.player_id                           # => "8478402", the NHL ID
+row.teams                               # => ["EDM"]; a traded player lists every team that season
+row.stats.avg_toi_seconds               # the same StatLine player details use
+```
+
+The current season turns over on October 1, so `last: 3` in the summer still counts the season
+that just ended. Each season is one table of 100-row pages (~10 for skaters, 1 or 2 for goalies),
+saved to the processed cache under `nhl/season_stats/<skaters|goalies>/<20252026>/<regular|playoffs>`.
+
 ### Evolving-Hockey skater GAR
 
 Download EH's skater GAR table as CSV (`EH_gar_sk_stats_regular_<date>.csv`) into a folder
