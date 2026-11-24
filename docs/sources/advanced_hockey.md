@@ -9,6 +9,30 @@
 anything derived from them, **never enter git** (ADR 0005, ADR 0014). Fixtures use the real column
 layouts with invented values, under `spec/fixtures/advanced_hockey/`.
 
+## Usage
+
+### Evolving-Hockey skater GAR
+
+Download EH's skater GAR table as CSV (`EH_gar_sk_stats_regular_<date>.csv`) into a folder
+**outside the repo**. EH groups it by season or by team and season; both import the same way:
+
+```ruby
+require "sports_ingest/advanced_hockey"
+include SportsIngest::AdvancedHockey
+
+rows = SkaterGarImport.read("~/hockey/EH_gar_sk_stats_regular_2026-11-23.csv")
+rows.first.season # => 2026 (the 26-27 season, named by its start year)
+rows.first.teams  # => ["N.J", "WPG"] for a traded player, grouped by season
+rows.first.war    # => 0.9
+
+SkaterGar.combine(rows) # one row per player and season, whichever grouping you exported
+```
+
+Grouped by team, a traded player has a row per team, but EH drops short stints from that view, so
+use the season grouping for exact totals. Columns are matched by name (`EVO_GAR` or `EVO GAR`), so
+a spreadsheet tab saved as CSV works too; a missing column raises
+`SportsIngest::SourceChangedError` listing the columns it found.
+
 ## Endpoints used
 
 None. Input is files the user exports by hand and drops into a local folder outside the repo.

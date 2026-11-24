@@ -9,6 +9,37 @@ Files, not an API: CSV (and other formats) attached to GitHub releases of
 [`nflverse/nflverse-data`](https://github.com/nflverse/nflverse-data). Each data set is one
 release tag.
 
+## Usage
+
+### nflverse release files
+
+```ruby
+require "sports_ingest/nflverse"
+
+downloader = SportsIngest::Nflverse::ReleaseDownloader.new
+release = downloader.fetch("stats_player", "stats_player_week_2025.csv")
+release.path         # a local file under <cache_dir>/releases/nflverse/stats_player/
+release.last_updated # => "2026-11-22 05:12:43 EST", from the tag's timestamp.json
+```
+
+A file is downloaded once and reused until the tag's `timestamp.json` changes, which is checked at
+most once per nflverse TTL (`SPORTS_INGEST_TTL_NFLVERSE`, a day by default). Offline, the last copy
+comes back with `stale: true`. nflverse data is CC-BY-4.0: credit nflverse wherever you show it.
+
+### nflverse player stats
+
+```ruby
+stats = SportsIngest::Nflverse::PlayerStats.new
+stats.weekly(last: 3)  # => [PlayerWeekStats, ...] one per player per game, incl. playoffs
+stats.season(seasons: [2025]) # => [PlayerSeasonStats, ...] regular-season totals
+stats.season(last: 3).first.stats["passing_yards"]
+```
+
+`seasons:` or `last:` work as everywhere else, `last: 3` by default. Stats are numeric columns keyed
+by their nflverse names (`"passing_yards"`, `"fantasy_points_ppr"`); blank and `NA` cells are left out
+([ADR 0041](docs/adr/0041-nflverse-player-stats-models.md)). A season whose file doesn't exist yet
+raises `SportsIngest::NotFound`.
+
 ## Endpoints used
 
 Download: `https://github.com/nflverse/nflverse-data/releases/download/{tag}/{file}`

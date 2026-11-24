@@ -24,15 +24,18 @@ projects (fantasy tools, dashboards, a future API) consume.
 
 | Source | Module | Notes |
 |---|---|---|
-| NHL (`api-web.nhle.com`, `api.nhle.com/stats/rest`) | `sports_ingest/nhl` | public, no auth |
-| ESPN Fantasy | `sports_ingest/espn` | read-only; private leagues need `espn_s2` + `SWID` cookies |
-| nflverse releases | `sports_ingest/nflverse` | GitHub release files |
-| Evolving-Hockey + PuckPedia | `sports_ingest/advanced_hockey` | licensed, manually exported files only |
+| Source | Module | Notes |
+|---|---|---|
+| [NHL](docs/sources/nhl.md) (`api-web.nhle.com`, `api.nhle.com/stats/rest`) | `sports_ingest/nhl` | public, no auth |
+| [ESPN Fantasy](docs/sources/espn.md) | `sports_ingest/espn` | read-only; private leagues need `espn_s2` + `SWID` cookies |
+| [nflverse releases](docs/sources/nflverse.md) | `sports_ingest/nflverse` | GitHub release files |
+| [Evolving-Hockey + PuckPedia](docs/sources/advanced_hockey.md) | `sports_ingest/advanced_hockey` | licensed, manually exported files only |
 
-They arrive in milestones M2 to M6. So far: the Evolving-Hockey skater GAR import, the ESPN
-Fantasy client and nflverse release downloads (below).
+They arrive in milestones M2 to M6. So far: the NHL adapter, the Evolving-Hockey skater GAR import,
+the ESPN Fantasy client and nflverse release downloads. Each source's usage examples are in its
+doc, linked above; [`docs/sources/README.md`](docs/sources/README.md) indexes the notes.
 
-## Usage
+## Quick start
 
 ```ruby
 require "sports_ingest"
@@ -54,212 +57,6 @@ team.tri_code                              # => "TBL"
 team.division                              # => "Atlantic"
 SportsIngest::Teams.find("UTAH", source: :espn).name # => "Utah Mammoth"
 ```
-
-### NHL schedule
-
-```ruby
-require "sports_ingest/nhl"
-
-games = SportsIngest::NHL.schedule(date: "2026-11-23")
-game = games.first
-"#{game.away_team.tri_code} @ #{game.home_team.tri_code}" # => "CBJ @ NJD"
-game.start_time     # => 2026-11-24 00:00:00 UTC; game.date is the local date, 2026-11-23
-game.state          # => :scheduled, then :pregame, :live, :final
-
-SportsIngest::NHL.schedule(from: "2026-11-23", to: "2026-11-30", team: "TOR") # a range, one team
-SportsIngest::NHL.schedule(team: "TOR", month: "2026-11")
-SportsIngest::NHL.schedule(team: "TOR", season: 2026) # 2026-27, preseason and playoffs included
-```
-
-### NHL scores
-
-One request for all of today's games, light enough to poll from a Pi:
-
-```ruby
-scores = SportsIngest::NHL.scores # today, by the NHL's date; or scores(date: "2026-11-22")
-live = scores.find(&:live?)
-"#{live.away_team.tri_code} #{live.away_team.score} @ #{live.home_team.tri_code} #{live.home_team.score}"
-live.period         # => 1 (4 is overtime, 5 a shootout in the regular season)
-live.clock          # => "08:16"; also seconds_remaining, clock_running, in_intermission
-live.game           # => the NHL::Game, as the schedule returns it
-live.phase          # => :regulation; or :pre, :intermission, :overtime, :shootout, :final
-live.home_shots     # => 10 (shots on goal; away_shots too)
-live.power_play     # => :away, :home or nil
-live.situation&.strength(:away) # => "5v4"; also clock (penalty time left) and empty_net
-```
-
-Each is an `NHL::GameScore`. Scores stay fresh in the raw cache for 30 seconds
-(`NHL::Scoreboard::TTL`), not the hour schedules get.
-
-To decide how long to wait before reading a game again, `NHL::PollInterval` maps its phase to
-seconds (60 before the game, 10 while play is live, 30 between periods, `nil` once it's final):
-
-```ruby
-SportsIngest::NHL::PollInterval.for(live)          # => 10
-SportsIngest::NHL::PollInterval.for_phase(:final)  # => nil: stop polling
-```
-
-### NHL goals
-
-Goals from one game's play-by-play, and the ones a poll didn't have before:
-
-```ruby
-before = SportsIngest::NHL.goals(2026020378)
-# ...a few seconds later...
-after = SportsIngest::NHL.goals(2026020378)
-goal = SportsIngest::NHL.new_goals(previous: before, current: after).first
-goal.period          # => 2
-goal.time_in_period  # => "19:46"
-goal.strength        # => "SH"; also "EV", "PP", "EN" (empty net)
-goal.scorer_id       # => 8482451 (NHL player ID); assist_ids => [8476923, 8485469]
-goal.side            # => :away; home_score, away_score after the goal
-```
-
-Each is an `NHL::Goal`. Shootout attempts aren't goals and are left out (ADR 0020).
-
-### NHL standings
-
-```ruby
-require "sports_ingest/nhl"
-
-standings = SportsIngest::NHL::Standings.fetch(date: "2026-11-22") # no date: today
-car = standings.find("CAR")
-car.record                     # => "18-3-3"
-car.points                     # => 39
-car.home.wins                  # => 8
-standings.division("Metropolitan").map(&:tri_code)
-```
-
-Each `Standing` carries `team_id` from `SportsIngest::Teams`, ranks, the clinch letter and
-`home` / `road` / `last_10` records. Other NHL paths go through `SportsIngest::NHL::Client`
-(`get_json`, `stats_json`).
-
-### NHL rosters
-
-```ruby
-require "sports_ingest/nhl"
-
-rosters = SportsIngest::NHL::Rosters.new
-players = rosters.fetch("EDM")             # current season; any team code works
-rosters.fetch("EDM", season: 2024)         # 2024-25 as it stood after the season, offseason trades included
-
-mcdavid = players.find { it.last_name == "McDavid" }
-mcdavid.id          # => "8478402", the NHL ID and canonical ID
-mcdavid.position    # => "C" (C, L, R, D or G); also forward?, defense?, goalie?
-mcdavid.birth_date  # => #<Date: 1997-01-13>
-```
-
-Each roster is also saved to the processed cache under `nhl/rosters/<TEAM>/<20242025 or current>`.
-
-### NHL player details and game logs
-
-```ruby
-require "sports_ingest/nhl"
-
-mcdavid = SportsIngest::NHL.player(8478402)
-mcdavid.player.birth_date               # => #<Date: 1997-01-13>; the same Player a roster gives
-mcdavid.player.shoots_catches           # => "L"
-mcdavid.draft.overall_pick              # => 1
-mcdavid.career_regular_season.points    # career NHL totals; also career_playoffs
-mcdavid.nhl_seasons.map(&:season)       # one StatLine per NHL season and team; seasons has every league
-
-log = SportsIngest::NHL.game_log(8478402, season: 2025)  # 2025-26 regular season, oldest game first
-SportsIngest::NHL.game_log(8478402, season: 2025, game_type: :playoffs)
-SportsIngest::NHL.game_log(8478402)                      # the NHL's current log (this season, or the playoffs)
-log.first.toi_seconds                   # skater and goalie stats share GameLogEntry; the rest are nil
-```
-
-Details are saved to the processed cache under `nhl/players/<id>`, game logs under
-`nhl/game_logs/<id>/<20252026>/<regular or playoffs>`.
-
-### NHL season stat tables
-
-```ruby
-require "sports_ingest/nhl"
-
-skaters = SportsIngest::NHL.skater_stats                 # last 3 seasons, regular season (the default)
-SportsIngest::NHL.skater_stats(last: 5)
-SportsIngest::NHL.goalie_stats(seasons: [2024, 2025], game_type: :playoffs)
-
-row = skaters.max_by { it.stats.points }
-row.player_id                           # => "8478402", the NHL ID
-row.teams                               # => ["EDM"]; a traded player lists every team that season
-row.stats.avg_toi_seconds               # the same StatLine player details use
-```
-
-The current season turns over on October 1, so `last: 3` in the summer still counts the season
-that just ended. Each season is one table of 100-row pages (~10 for skaters, 1 or 2 for goalies),
-saved to the processed cache under `nhl/season_stats/<skaters|goalies>/<20252026>/<regular|playoffs>`.
-
-### Evolving-Hockey skater GAR
-
-Download EH's skater GAR table as CSV (`EH_gar_sk_stats_regular_<date>.csv`) into a folder
-**outside the repo**. EH groups it by season or by team and season; both import the same way:
-
-```ruby
-require "sports_ingest/advanced_hockey"
-include SportsIngest::AdvancedHockey
-
-rows = SkaterGarImport.read("~/hockey/EH_gar_sk_stats_regular_2026-11-23.csv")
-rows.first.season # => 2026 (the 26-27 season, named by its start year)
-rows.first.teams  # => ["N.J", "WPG"] for a traded player, grouped by season
-rows.first.war    # => 0.9
-
-SkaterGar.combine(rows) # one row per player and season, whichever grouping you exported
-```
-
-Grouped by team, a traded player has a row per team, but EH drops short stints from that view, so
-use the season grouping for exact totals. Columns are matched by name (`EVO_GAR` or `EVO GAR`), so
-a spreadsheet tab saved as CSV works too; a missing column raises
-`SportsIngest::SourceChangedError` listing the columns it found.
-
-### ESPN Fantasy
-
-Read-only. Public leagues need nothing; for a private league, set the `espn_s2` and `SWID` cookies
-from a logged-in browser in `SPORTS_INGEST_ESPN_S2` / `SPORTS_INGEST_ESPN_SWID` (or
-`SportsIngest.configure`). Without them, a private league raises `SportsIngest::AuthError`.
-
-```ruby
-require "sports_ingest/espn"
-
-espn = SportsIngest::ESPN::Client.new(game: :hockey) # or :football
-league = espn.league(12_345, season: 2027, views: %w[mSettings mTeam])
-league.dig("settings", "name")
-
-espn.get_json("seasons/2027/players", views: ["kona_player_info"],
-  filter: SportsIngest::ESPN::Filter.players(limit: 50, status: :free_agent, sort_percent_owned: true))
-```
-
-Hockey seasons are named by the year they end (2026-27 is `2027`), football by the year it starts.
-
-### nflverse release files
-
-```ruby
-require "sports_ingest/nflverse"
-
-downloader = SportsIngest::Nflverse::ReleaseDownloader.new
-release = downloader.fetch("stats_player", "stats_player_week_2025.csv")
-release.path         # a local file under <cache_dir>/releases/nflverse/stats_player/
-release.last_updated # => "2026-11-22 05:12:43 EST", from the tag's timestamp.json
-```
-
-A file is downloaded once and reused until the tag's `timestamp.json` changes, which is checked at
-most once per nflverse TTL (`SPORTS_INGEST_TTL_NFLVERSE`, a day by default). Offline, the last copy
-comes back with `stale: true`. nflverse data is CC-BY-4.0: credit nflverse wherever you show it.
-
-### nflverse player stats
-
-```ruby
-stats = SportsIngest::Nflverse::PlayerStats.new
-stats.weekly(last: 3)  # => [PlayerWeekStats, ...] one per player per game, incl. playoffs
-stats.season(seasons: [2025]) # => [PlayerSeasonStats, ...] regular-season totals
-stats.season(last: 3).first.stats["passing_yards"]
-```
-
-`seasons:` or `last:` work as everywhere else, `last: 3` by default. Stats are numeric columns keyed
-by their nflverse names (`"passing_yards"`, `"fantasy_points_ppr"`); blank and `NA` cells are left out
-([ADR 0041](docs/adr/0041-nflverse-player-stats-models.md)). A season whose file doesn't exist yet
-raises `SportsIngest::NotFound`.
 
 ## Development
 

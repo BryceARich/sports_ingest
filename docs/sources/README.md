@@ -1,7 +1,8 @@
 # Source notes
 
-One file per data source: what we call, how we authenticate, the limits and quirks we've hit, the
-terms we read, and **the date it was last verified working**. The APIs here are mostly undocumented,
+One file per data source: how to use it (the usage examples moved out of the README, M1-14), what
+we call, how we authenticate, the limits and quirks we've hit, the terms we read, and **the date it
+was last verified working**. The APIs here are mostly undocumented,
 so these notes are the only record of what we rely on (ADR 0015).
 
 | Source | Note | Module | Last verified |
@@ -34,6 +35,7 @@ so these notes are the only record of what we rely on (ADR 0015).
 - **Last verified:** YYYY-MM-DD: what was checked, and how
 - **Default raw-cache TTL:** N seconds (`SPORTS_INGEST_TTL_<SOURCE>`)
 
+## Usage
 ## Endpoints used
 ## Auth
 ## Rate limits

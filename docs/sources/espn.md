@@ -8,6 +8,27 @@
 - **Client:** `SportsIngest::ESPN::Client` (ADR 0032); filters with `SportsIngest::ESPN::Filter`
 - **Default raw-cache TTL:** 900 seconds (`SPORTS_INGEST_TTL_ESPN`)
 
+## Usage
+
+### ESPN Fantasy
+
+Read-only. Public leagues need nothing; for a private league, set the `espn_s2` and `SWID` cookies
+from a logged-in browser in `SPORTS_INGEST_ESPN_S2` / `SPORTS_INGEST_ESPN_SWID` (or
+`SportsIngest.configure`). Without them, a private league raises `SportsIngest::AuthError`.
+
+```ruby
+require "sports_ingest/espn"
+
+espn = SportsIngest::ESPN::Client.new(game: :hockey) # or :football
+league = espn.league(12_345, season: 2027, views: %w[mSettings mTeam])
+league.dig("settings", "name")
+
+espn.get_json("seasons/2027/players", views: ["kona_player_info"],
+  filter: SportsIngest::ESPN::Filter.players(limit: 50, status: :free_agent, sort_percent_owned: true))
+```
+
+Hockey seasons are named by the year they end (2026-27 is `2027`), football by the year it starts.
+
 ## Endpoints used
 
 Base: `https://lm-api-reads.fantasy.espn.com/apis/v3/games/{game}`, where `game` is `fhl`
