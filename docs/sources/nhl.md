@@ -90,6 +90,10 @@ seconds at most while live.
   `gameType`) and warns, rather than failing (ADR 0017).
 - **2026-27 has 84 regular-season games per team** (82 before), plus preseason games, some
   split-squad (`homeSplitSquad`), in the club schedule.
+- **Standings rows have no team ID.** Map `teamAbbrev` through `SportsIngest::Teams` (M2-06 does).
+  `wildcardSequence` is `0` for a team in its division top three, and `placeName` reads
+  "NY Rangers" / "NY Islanders" where `teamName` says "New York". `/standings/{date}` for an
+  off-season date may come back with an empty `standings` list (unverified; `Standings` handles it).
 - **Unknown IDs return `404`** (e.g. `/player/1/landing`); map that to `SportsIngest::NotFound`.
 - **Shapes change between seasons** without notice. Re-record fixtures at the start of each
   season and update the date above.

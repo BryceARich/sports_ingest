@@ -71,6 +71,23 @@ SportsIngest::NHL.schedule(team: "TOR", month: "2026-11")
 SportsIngest::NHL.schedule(team: "TOR", season: 2026) # 2026-27, preseason and playoffs included
 ```
 
+### NHL standings
+
+```ruby
+require "sports_ingest/nhl"
+
+standings = SportsIngest::NHL::Standings.fetch(date: "2026-11-22") # no date: today
+car = standings.find("CAR")
+car.record                     # => "18-3-3"
+car.points                     # => 39
+car.home.wins                  # => 8
+standings.division("Metropolitan").map(&:tri_code)
+```
+
+Each `Standing` carries `team_id` from `SportsIngest::Teams`, ranks, the clinch letter and
+`home` / `road` / `last_10` records. Other NHL paths go through `SportsIngest::NHL::Client`
+(`get_json`, `stats_json`).
+
 ### Evolving-Hockey skater GAR
 
 Download EH's skater GAR table as CSV (`EH_gar_sk_stats_regular_<date>.csv`) into a folder
