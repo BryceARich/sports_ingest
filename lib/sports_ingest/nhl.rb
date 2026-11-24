@@ -50,6 +50,34 @@ module SportsIngest
       Scoreboard.new(client: client).on(date)
     end
 
+    # One game's goals so far, from its play-by-play. See {GoalEvents}.
+    #
+    # @param game_id [Integer, String] the NHL game ID, all digits
+    # @param client [Client, nil] what the NHL is read through; +nil+ means a new {Client} that
+    #   keeps entries fresh for {Scoreboard::TTL} seconds
+    # @return [Array<Goal>] in the NHL's order; empty before the first goal
+    # @raise [ArgumentError] if +game_id+ isn't all digits
+    # @raise [NotFound] if the NHL has no such game
+    # @raise [SourceChangedError] if the payload isn't shaped as expected
+    # @raise [HTTPError, ParseError] if the request fails
+    # @example
+    #   SportsIngest::NHL.goals(2026020378).map { |g| [g.period, g.time_in_period, g.strength] }
+    def self.goals(game_id, client: nil)
+      GoalEvents.new(client: client).fetch(game_id)
+    end
+
+    # The goals a poll found that the previous poll didn't. See {GoalEvents.new_since}.
+    #
+    # @param previous [Array<Goal>] the last poll's goals
+    # @param current [Array<Goal>] this poll's goals
+    # @return [Array<Goal>] the new ones, in +current+'s order
+    # @raise [ArgumentError] if either isn't an Array of {Goal}s
+    # @example
+    #   SportsIngest::NHL.new_goals(previous: before, current: after)
+    def self.new_goals(previous:, current:)
+      GoalEvents.new_since(previous, current)
+    end
+
     # One player's bio, draft, career and season totals. See {Players#fetch}.
     #
     # @param id [String, Integer] the NHL player ID
