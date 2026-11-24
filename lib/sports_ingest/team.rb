@@ -74,7 +74,13 @@ module SportsIngest
       text = TEXT_FIELDS.to_h { |field| [field, self.class.coerce_text(field, text[field])] }
         .merge(text.except(*TEXT_FIELDS))
       ids = {canonical => id}.merge(Identity::PlayerRef.coerce_source_ids(source_ids)).sort.to_h
-      codes = {canonical => [tri_code]}.merge(self.class.coerce_codes(codes)).sort.to_h
+      codes = {canonical => [tri_code]}.merge(
+        self.class.coerce_codes(codes, keys: Identity::PlayerRef::SOURCE_NAME, noun: "source") do |source, list|
+          raise ArgumentError, "codes[:#{source}] must be an Array, got #{list.class}" unless list.is_a?(Array)
+
+          list.map { |code| self.class.coerce_text(:code, code) }
+        end
+      ).sort.to_h
 
       super(sport: sport, id: id, tri_code: tri_code, colors: self.class.coerce_colors(colors),
             source_ids: ids, codes: codes, **text)
@@ -122,22 +128,6 @@ module SportsIngest
           raise ArgumentError, "colors[:#{key}] must look like #RRGGBB, got #{colors[key].inspect}" unless COLOR.match?(color)
 
           [key, color]
-        end
-      end
-
-      # @api private
-      # @param codes [Hash{Symbol, String => Array<String>}]
-      # @return [Hash{Symbol => Array<String>}]
-      # @raise [ArgumentError] if a source name or code is invalid
-      def coerce_codes(codes)
-        raise ArgumentError, "codes must be a Hash, got #{codes.class}" unless codes.is_a?(Hash)
-
-        codes.to_h do |source, list|
-          name = source.to_s
-          raise ArgumentError, "invalid source name #{source.inspect}" unless Identity::PlayerRef::SOURCE_NAME.match?(name)
-          raise ArgumentError, "codes[:#{name}] must be an Array, got #{list.class}" unless list.is_a?(Array)
-
-          [name.to_sym, list.map { |code| coerce_text(:code, code) }]
         end
       end
     end
