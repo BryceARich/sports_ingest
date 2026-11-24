@@ -91,6 +91,14 @@ live.situation&.strength(:away) # => "5v4"; also clock (penalty time left) and e
 Each is an `NHL::GameScore`. Scores stay fresh in the raw cache for 30 seconds
 (`NHL::Scoreboard::TTL`), not the hour schedules get.
 
+To decide how long to wait before reading a game again, `NHL::PollInterval` maps its phase to
+seconds (60 before the game, 10 while play is live, 30 between periods, `nil` once it's final):
+
+```ruby
+SportsIngest::NHL::PollInterval.for(live)          # => 10
+SportsIngest::NHL::PollInterval.for_phase(:final)  # => nil: stop polling
+```
+
 ### NHL goals
 
 Goals from one game's play-by-play, and the ones a poll didn't have before:
