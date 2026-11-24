@@ -1,0 +1,28 @@
+#!/bin/sh
+# Runs a command with the Ruby from .ruby-version and a UTF-8 locale, for shells where mise isn't
+# activated (Claude sessions, cron). Prefix Ruby commands with it:
+#
+#   script/claude/run bundle exec rspec
+#   script/claude/run script/claude/ready-issues
+set -eu
+
+[ "$#" -gt 0 ] || { echo "usage: script/claude/run <command> [args...]" >&2; exit 64; }
+
+case "${LANG:-}" in *UTF-8* | *utf8*) ;; *) LANG=en_US.UTF-8 ;; esac
+export LANG
+
+root=$(cd "$(dirname "$0")/../.." && pwd)
+want=$(tr -d '[:space:]' <"$root/.ruby-version")
+
+if ruby -e 'exit(RUBY_VERSION == ARGV[0])' "$want" 2>/dev/null; then
+  exec "$@"
+fi
+
+for mise in mise "$HOME/.local/bin/mise" /opt/homebrew/bin/mise /usr/local/bin/mise; do
+  if command -v "$mise" >/dev/null 2>&1; then
+    exec "$mise" exec -C "$root" -- "$@"
+  fi
+done
+
+echo "script/claude/run: Ruby $want isn't on PATH and mise wasn't found; see docs/SETUP.md" >&2
+exit 1

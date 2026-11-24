@@ -92,8 +92,8 @@ module SportsIngest
       # @raise [ArgumentError] if a field is missing, the wrong type, or not one of its allowed values
       def initialize(id:, season:, game_type:, date:, start_time:, state:, schedule_state:, home_team:,
         away_team:, ended_in: nil, venue: nil, neutral_site: false, codes: {})
-        raise ArgumentError, "season must be an Integer, got #{season.inspect}" unless season.is_a?(Integer)
-        raise ArgumentError, "neutral_site must be true or false" unless [true, false].include?(neutral_site)
+        self.class.check_integer(:season, season)
+        self.class.check_boolean(:neutral_site, neutral_site)
 
         super(
           id: Identity::PlayerRef.coerce_id(id), season: season,
@@ -104,7 +104,11 @@ module SportsIngest
           ended_in: ended_in && self.class.coerce_coded(:ended_in, ended_in),
           venue: venue, neutral_site: neutral_site,
           home_team: GameTeam.coerce(home_team), away_team: GameTeam.coerce(away_team),
-          codes: self.class.coerce_codes(codes)
+          codes: self.class.coerce_codes(codes, keys: CODED_FIELDS.keys) do |field, code|
+            raise ArgumentError, "codes[:#{field}] must be a String or Integer" unless code.is_a?(String) || code.is_a?(Integer)
+
+            code
+          end
         )
       end
 
@@ -218,22 +222,6 @@ module SportsIngest
           return symbol if allowed.include?(symbol)
 
           raise ArgumentError, "#{field} must be one of #{allowed.join(", ")}, got #{value.inspect}"
-        end
-
-        # @api private
-        # @param codes [Hash{Symbol, String => String, Integer}]
-        # @return [Hash{Symbol => String, Integer}] sorted by field
-        # @raise [ArgumentError] if a key isn't a coded field or a value isn't a String or Integer
-        def coerce_codes(codes)
-          raise ArgumentError, "codes must be a Hash, got #{codes.class}" unless codes.is_a?(Hash)
-
-          codes.to_h do |field, code|
-            field = field.to_sym
-            raise ArgumentError, "codes has no field #{field.inspect}" unless CODED_FIELDS.key?(field)
-            raise ArgumentError, "codes[:#{field}] must be a String or Integer" unless code.is_a?(String) || code.is_a?(Integer)
-
-            [field, code]
-          end.sort.to_h
         end
 
         # @api private

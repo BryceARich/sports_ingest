@@ -93,7 +93,7 @@ module SportsIngest
       # @raise [ArgumentError] if +season+ isn't an Integer or +nil+, +game_type+ is unknown, or a
       #   stat isn't one of {STATS}
       def initialize(game_type:, season: nil, league: nil, team_name: nil, **stats)
-        raise ArgumentError, "season must be an Integer or nil, got #{season.inspect}" unless season.nil? || season.is_a?(Integer)
+        self.class.check_integer(:season, season, allow_nil: true)
 
         unknown = stats.keys - STATS
         raise ArgumentError, "unknown stats #{unknown.inspect}" unless unknown.empty?

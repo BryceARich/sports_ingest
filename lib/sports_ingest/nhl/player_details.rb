@@ -41,7 +41,7 @@ module SportsIngest
       # @raise [ArgumentError] if +active+ isn't a Boolean, +seasons+ isn't an Array, or a nested
       #   model rejects its fields
       def initialize(player:, active:, seasons:, draft: nil, career_regular_season: nil, career_playoffs: nil)
-        raise ArgumentError, "active must be true or false, got #{active.inspect}" unless [true, false].include?(active)
+        self.class.check_boolean(:active, active)
         raise ArgumentError, "seasons must be an Array, got #{seasons.class}" unless seasons.is_a?(Array)
 
         super(player: Player.coerce(player), active: active, draft: Draft.coerce(draft),

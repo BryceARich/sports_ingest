@@ -6,7 +6,8 @@
   call, `/standings/2026-11-22` and the stats `/team` list were also recorded as fixtures on
   2026-11-22 (`spec/fixtures/cassettes/nhl/`). `/schedule/2026-11-16`, `/club-schedule/TOR/week/2026-11-16`
   and `.../2026-11-23`, and `/club-schedule/TOR/month/2026-11` were recorded on 2026-11-23, and `/score/now` (redirecting
-  to `/score/2026-11-23`, one game live) the evening of 2026-11-23.
+  to `/score/2026-11-23`, one game live) the evening of 2026-11-23; `/score/now` again later that evening
+  (a power play, an intermission and finals) and `/score/2026-11-11` (overtime and shootout finals).
 - **Default raw-cache TTL:** 3600 seconds (`SPORTS_INGEST_TTL_NHL`); live-game calls will want far
   less (the polling helper, M2-10).
 
@@ -22,9 +23,9 @@ Two public hosts, neither documented by the NHL. Both sit behind Cloudflare.
 | `/club-schedule-season/{TEAM}/{season}` | one team's season, e.g. `TOR/20252026` (~190 KB) | M2-02 |
 | `/club-schedule/{TEAM}/week/{YYYY-MM-DD}` | one team's games in the 7 days from that date (~6 KB) | M2-02 |
 | `/club-schedule/{TEAM}/month/{YYYY-MM}` | one team's games in that month (~26 KB) | M2-02 |
-| `/score/{YYYY-MM-DD}`, `/score/now` | that day's games with `gameState`, scores, `clock`, `periodDescriptor`, `goals` (~25 to 40 KB) | M2-03 |
+| `/score/{YYYY-MM-DD}`, `/score/now` | that day's games with `gameState`, scores, `clock`, `periodDescriptor`, per-team `sog`, `situation`, `goals` (~25 to 40 KB) | M2-03, M2-04 |
 | `/scoreboard/now` | several days of games around today (~160 KB); not used, `/score` is lighter | — |
-| `/gamecenter/{gameId}/landing` | game summary | M2-04 |
+| `/gamecenter/{gameId}/landing` | one game: state, `clock`, `periodDescriptor`, `sog`, `situation`, summary (~10 KB); not used yet, `/score` covers live state (ADR 0019) | — |
 | `/gamecenter/{gameId}/boxscore` | box score | M2-04 |
 | `/gamecenter/{gameId}/play-by-play` | every event, including goals with strength and assists | M2-05 |
 | `/standings/{YYYY-MM-DD}` | standings as of that date; also checks the team table's codes, names, conference and division | M2-06, M2-01 |
@@ -92,9 +93,15 @@ seconds at most while live.
 - **Scores (`/score/{date}`):** each game carries `gameDate`, unlike schedule weeks. `clock`
   (`secondsRemaining`, `running`, `inIntermission`), `period` and `periodDescriptor`
   (`number`, `periodType` `REG`/`OT`/`SO`) are absent until the game starts (`FUT`, `PRE`); a final
-  game keeps its last period and a `00:00` clock. A shootout is period 5 with `periodType` `SO`.
-  Teams carry `sog` (shots on goal) and `goals` lists every goal with scorer and assists; the gem
-  leaves both to M2-04 and M2-05. `/score/now` redirects to the NHL's current date (ET), which can
+  game keeps its last period and what was left on its clock: `00:00`, except an overtime that ended
+  early (`04:13`). A shootout is period 5 with `periodType` `SO`. Teams carry `sog` (shots on goal)
+  once the game starts. `goals` lists every goal with scorer and assists (M2-05 reads goals from the play-by-play instead,
+  ADR 0020).
+- **`situation` (in `/score` and `/gamecenter/.../landing`):** present only while a game isn't
+  five-on-five with both goalies in. `situationCode` is four digits: away goalie (0/1), away
+  skaters, home skaters, home goalie (`"1541"` is an away power play, 5v4). Each side has `abbrev`,
+  `strength` (skaters) and sometimes `situationDescriptions` (`PP`; `EN` for a pulled goalie);
+  `secondsRemaining` / `timeRemaining` is the penalty time left. Recorded 2026-11-23 (ADR 0019). `/score/now` redirects to the NHL's current date (ET), which can
   differ from the caller's local date late at night.
 - **2026-27 has 84 regular-season games per team** (82 before), plus preseason games, some
   split-squad (`homeSplitSquad`), in the club schedule.
@@ -131,6 +138,16 @@ seconds at most while live.
   is the current season and game type (the playoffs while they're on). In `last5Games`, goalie rows
   say `penaltyMins`, not `pim`. Recorded as `nhl/player_8478402_*` (McDavid) and
   `nhl/player_8479361_*` (a goalie) on 2026-11-23.
+- **Season stat tables:** `skater/summary` and `goalie/summary` give one row per player per
+  season and game type, a traded player's teams joined in `teamAbbrevs` (`"TOR,EDM"`). Skater rows
+  say `skaterFullName`, `positionCode`, `penaltyMinutes`, `ppGoals`, `shootingPct`, `faceoffWinPct`
+  and `timeOnIcePerGame` (seconds, a float); goalie rows say `goalieFullName`, `goalsAgainstAverage`,
+  `savePct` and `timeOnIce` (total seconds, an integer) and have no position. Without `sort` the
+  order isn't stable across pages; the gem sorts by `playerId`. A regular season is ~800 to 950
+  skaters (~10 pages) and ~100 goalies (1 to 2 pages). `cayenneExp` also takes ranges
+  (`seasonId>=20242025 and seasonId<=20252026`), unused. Playoff goalie tables (~25-28 rows, one page) are
+  recorded as `nhl/stats_goalie_summary_2022_to_2026_playoffs` on 2026-11-23 to keep the cassette
+  small; skater fields are checked against `nhl/stats_skater_summary_limit_1`.
 - **Shapes change between seasons** without notice. Re-record fixtures at the start of each
   season and update the date above.
 

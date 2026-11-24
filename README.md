@@ -82,10 +82,40 @@ live = scores.find(&:live?)
 live.period         # => 1 (4 is overtime, 5 a shootout in the regular season)
 live.clock          # => "08:16"; also seconds_remaining, clock_running, in_intermission
 live.game           # => the NHL::Game, as the schedule returns it
+live.phase          # => :regulation; or :pre, :intermission, :overtime, :shootout, :final
+live.home_shots     # => 10 (shots on goal; away_shots too)
+live.power_play     # => :away, :home or nil
+live.situation&.strength(:away) # => "5v4"; also clock (penalty time left) and empty_net
 ```
 
 Each is an `NHL::GameScore`. Scores stay fresh in the raw cache for 30 seconds
 (`NHL::Scoreboard::TTL`), not the hour schedules get.
+
+To decide how long to wait before reading a game again, `NHL::PollInterval` maps its phase to
+seconds (60 before the game, 10 while play is live, 30 between periods, `nil` once it's final):
+
+```ruby
+SportsIngest::NHL::PollInterval.for(live)          # => 10
+SportsIngest::NHL::PollInterval.for_phase(:final)  # => nil: stop polling
+```
+
+### NHL goals
+
+Goals from one game's play-by-play, and the ones a poll didn't have before:
+
+```ruby
+before = SportsIngest::NHL.goals(2026020378)
+# ...a few seconds later...
+after = SportsIngest::NHL.goals(2026020378)
+goal = SportsIngest::NHL.new_goals(previous: before, current: after).first
+goal.period          # => 2
+goal.time_in_period  # => "19:46"
+goal.strength        # => "SH"; also "EV", "PP", "EN" (empty net)
+goal.scorer_id       # => 8482451 (NHL player ID); assist_ids => [8476923, 8485469]
+goal.side            # => :away; home_score, away_score after the goal
+```
+
+Each is an `NHL::Goal`. Shootout attempts aren't goals and are left out (ADR 0020).
 
 ### NHL standings
 
@@ -141,6 +171,25 @@ log.first.toi_seconds                   # skater and goalie stats share GameLogE
 
 Details are saved to the processed cache under `nhl/players/<id>`, game logs under
 `nhl/game_logs/<id>/<20252026>/<regular or playoffs>`.
+
+### NHL season stat tables
+
+```ruby
+require "sports_ingest/nhl"
+
+skaters = SportsIngest::NHL.skater_stats                 # last 3 seasons, regular season (the default)
+SportsIngest::NHL.skater_stats(last: 5)
+SportsIngest::NHL.goalie_stats(seasons: [2024, 2025], game_type: :playoffs)
+
+row = skaters.max_by { it.stats.points }
+row.player_id                           # => "8478402", the NHL ID
+row.teams                               # => ["EDM"]; a traded player lists every team that season
+row.stats.avg_toi_seconds               # the same StatLine player details use
+```
+
+The current season turns over on October 1, so `last: 3` in the summer still counts the season
+that just ended. Each season is one table of 100-row pages (~10 for skaters, 1 or 2 for goalies),
+saved to the processed cache under `nhl/season_stats/<skaters|goalies>/<20252026>/<regular|playoffs>`.
 
 ### Evolving-Hockey skater GAR
 
@@ -201,7 +250,7 @@ comes back with `stale: true`. nflverse data is CC-BY-4.0: credit nflverse where
 ## Development
 
 Ruby is pinned in `.ruby-version` and installed with [mise](https://mise.jdx.dev).
-Full setup for Mac and Raspberry Pi is in [`docs/RESUME.md`](docs/RESUME.md).
+Full setup for Mac and Raspberry Pi is in [`docs/SETUP.md`](docs/SETUP.md).
 
 ```bash
 mise install          # Ruby from .ruby-version

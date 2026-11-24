@@ -20,4 +20,12 @@ RSpec.describe SportsIngest::NHL::Season do
       expect { described_class.year(id) }.to raise_error(ArgumentError, /NHL season ID/)
     end
   end
+
+  it "rolls the current season over in October, keeping last season through the summer" do
+    expect(described_class.current(Date.new(2026, 11, 23))).to eq(2026)
+    expect(described_class.current(Date.new(2026, 10, 1))).to eq(2026)
+    expect(described_class.current(Date.new(2026, 9, 30))).to eq(2025)
+    expect(described_class.current(Date.new(2027, 4, 15))).to eq(2026)
+    expect { described_class.current("2026-11-23") }.to raise_error(ArgumentError, /Date/)
+  end
 end

@@ -18,7 +18,7 @@ namespace :adr do
     abort "adr: index is wrong; run `rake adr:index`\n#{problems.join("\n")}" if problems.any?
 
     waiting = adr_index.unindexed
-    puts "adr: index OK" + (waiting.empty? ? "" : "; added at the next release: #{waiting.map(&:file).join(", ")}")
+    puts "adr: index OK" + (waiting.empty? ? "" : "; #{waiting.size} ADR(s) join it at the next release")
   rescue RepoTools::Error => e
     abort "adr: #{e.message}"
   end
