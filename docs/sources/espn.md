@@ -30,6 +30,12 @@ here with what it returns when an adapter starts using it.
   `keeper`. `SportsIngest::ESPN::Drafts` reads it; the shape is from ESPN's undocumented responses
   and has not been checked against a live league yet (see the M4-05 note in the PR).
 
+`mTeam` gives each team's `id`, `location`, `nickname`, `abbrev` and `owners` (GUIDs). `mRoster`
+adds `roster.entries[]`: each has `playerId`, `lineupSlotId`, `acquisitionType` and a
+`playerPoolEntry.player` with `fullName`, `proTeamId`, `defaultPositionId` and `injuryStatus`.
+`SportsIngest::ESPN::Rosters` reads both (M4-06, ADR 0037); its roster entries keep ESPN's
+player IDs until the crosswalk (M3) maps them to NHL IDs.
+
 Players carry a `proTeamId` (0 means free agent). It's ESPN's team ID, and maps to a team through
 `SportsIngest::Teams.find_by_source_id(:espn, id)`; checked against the player pool on 2026-11-22.
 ESPN's abbreviations differ from the NHL's for `LA`, `NJ`, `SJ`, `TB` and `UTAH`.
