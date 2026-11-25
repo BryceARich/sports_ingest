@@ -12,7 +12,7 @@ _Last updated: 2026-11-23 (during M2)._
 | M0 Documentation & conventions | **done** |
 | M1 Foundation | **done**: skeleton, CI, loading, config, HTTP client, caches, errors, fixtures, licensed-data guard |
 | M2 NHL adapter | **in progress** (7 of 11): teams, schedule, scoreboard, live game state, standings, rosters, player details |
-| M3 Player identity | started (2 of 6): canonical IDs, name match keys |
+| M3 Player identity | started (5 of 6 merged): canonical IDs, name match keys, matcher, overrides, unmatched report; the crosswalk (M3-06, #31) is awaiting review |
 | M4 ESPN Fantasy | started (1 of 8): client and cookies |
 | M5 nflverse, M6 Advanced hockey | started (M5: downloader and players/rosters; M6: 1) |
 | M7, M8 Later | not started |
@@ -28,6 +28,10 @@ The `[Mx-yy]` prefix in each title is the build order.
 
 ## Known gotchas
 
+- **The crosswalk stores matches, not unmatched results, and it outlives rule changes.** After you
+  change name keys or matcher tiers, call `Crosswalk#clear` (or delete `<cache_dir>/crosswalk/`) so
+  old links don't stick. Overrides are never stored, so edits to the overrides file apply at once
+  (ADR 0031).
 - **Claude sessions: run Ruby through `script/claude/run`.** The desktop app's shell doesn't
   activate mise, so `ruby` is macOS's 2.6. `script/claude/run bundle exec rspec` (or any command)
   uses the `.ruby-version` Ruby and a UTF-8 locale. Specs, rake and `script/claude/*` read files as
