@@ -76,9 +76,8 @@ module SportsIngest
       def match(source:, name:, id: nil, birth_date: nil, position: nil, team: nil)
         source = source.to_sym
         id = PlayerRef.coerce_id(id) unless id.nil?
-        if (override = @overrides.find(source: source, name: name, id: id))
-          return overridden(*override, source, id)
-        end
+        override = override_for(source: source, name: name, id: id)
+        return override if override
 
         by_id = id && @by_source_id[[source, id]]
         return found(by_id, :source_id, "#{source} ID #{id}", source, id) if by_id
@@ -90,6 +89,22 @@ module SportsIngest
         end
 
         match_by_name(record, source, id)
+      end
+
+      # The manual override for a record, if one applies (ADR 0029). Cheap: no tiers run, so it's
+      # safe to ask before a stored match is trusted ({Crosswalk}).
+      #
+      # @param source [Symbol, String] the record's source
+      # @param name [String] the player's name as the source spells it
+      # @param id [String, Integer, nil] the source's ID for the player, if it has one
+      # @return [Match, nil] the overridden match (+reason: :override+), or +nil+ when no override applies
+      # @raise [ArgumentError] if +id+ or +source+ is malformed
+      def override_for(source:, name:, id: nil)
+        source = source.to_sym
+        id = PlayerRef.coerce_id(id) unless id.nil?
+        override = @overrides.find(source: source, name: name, id: id) or return nil
+
+        overridden(*override, source, id)
       end
 
       private
