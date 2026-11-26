@@ -34,11 +34,15 @@ module SportsIngest
       # @param text [String] the CSV, header row first
       # @param table [String] the table's name, used in error messages
       # @param required [Array<Symbol>] normalized column names that must be present
+      # @param aliases [Hash{String => Symbol}] raw headers that map to a name, checked before
+      #   {normalize}; for headers whose signs would otherwise collapse, such as +GAR-+ and +GAR+
+      #   (both +gar+ once normalized). Keys are upper case; matching ignores case.
       # @return [Array<TableRow>] the non-blank rows, in file order
       # @raise [ParseError] if the text isn't valid CSV
       # @raise [SourceChangedError] if a required column is missing
-      def rows(text, table:, required:)
-        csv = CSV.parse(text.delete_prefix("\uFEFF"), headers: true, header_converters: ->(h) { normalize(h) })
+      def rows(text, table:, required:, aliases: {})
+        converter = ->(h) { aliases.fetch(h.to_s.strip.upcase) { normalize(h) } }
+        csv = CSV.parse(text.delete_prefix("\uFEFF"), headers: true, header_converters: converter)
         missing = required - csv.headers
         unless missing.empty?
           raise SourceChangedError.new(

@@ -50,7 +50,7 @@ None. Input is files the user exports by hand and drops into a local folder outs
 |---|---|---|
 | EH skater GAR table | `SkaterGarImport` | M6-01 |
 | EH goalie GAR table | goalie GAR import | M6-02 |
-| EH GAR projections | projections import | M6-03 |
+| EH GAR projections | `ProjectionGarImport` | M6-03 |
 | PuckPedia cap hits (CSV) | contract import | M6-04 |
 
 Each importer adds its export's columns, file naming and an example row (invented values) here.
@@ -95,6 +95,10 @@ Not applicable.
   read as `nil`.
 - **Spreadsheet tabs** saved as CSV may add a byte-order mark and trailing all-blank rows; both
   are ignored.
+- **GAR projections** (`ProjectionGarImport`): the tab's signs are part of its header names. `GAR-`
+  and `GAR+` are the low and high ends of GAR; `GAR/60-` and `GAR/60+` do the same for GAR/60;
+  `GAR Unc` is the uncertainty. Those headers are aliased, because normalizing them by name would
+  collapse the signs into duplicate columns.
 
 ## Terms of use
 
