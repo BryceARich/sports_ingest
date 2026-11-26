@@ -64,16 +64,7 @@ module SportsIngest
       #   by_team = SkaterGarImport.read("~/hockey/gar_by_team.csv")
       #   SkaterGar.combine(by_team).find { it.player == "Avery Testwood" }.teams # => ["N.J", "WPG"]
       def self.combine(rows)
-        rows.group_by { [it.player, it.season] }.values.map do |group|
-          next group.first if group.one?
-
-          # Everything but the identifying fields is a counting stat.
-          sums = (members - %i[player season teams position]).to_h do |field|
-            values = group.map(&field)
-            [field, values.include?(nil) ? nil : values.sum.round(1)]
-          end
-          group.first.with(teams: group.flat_map(&:teams).uniq, **sums)
-        end
+        GarCombine.call(rows, self)
       end
     end
   end

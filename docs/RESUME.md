@@ -14,7 +14,8 @@ _Last updated: 2026-11-23 (during M2)._
 | M2 NHL adapter | **in progress** (7 of 11): teams, schedule, scoreboard, live game state, standings, rosters, player details |
 | M3 Player identity | started (5 of 6 merged): canonical IDs, name match keys, matcher, overrides, unmatched report; the crosswalk (M3-06, #31) is awaiting review |
 | M4 ESPN Fantasy | started (1 of 8): client and cookies |
-| M5 nflverse, M6 Advanced hockey | started (M5: downloader and players/rosters; M6: 1) |
+| M5 nflverse | started (downloader and players/rosters) |
+| M6 Advanced hockey | started (3: skater, goalie and projection GAR imports) |
 | M7, M8 Later | not started |
 
 ## Next issues to take
