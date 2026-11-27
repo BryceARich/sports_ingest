@@ -151,6 +151,17 @@ RSpec.describe SportsIngest::NHL::Schedule do
     expect([game.home_team.score, game.away_team.score]).to eq([3, 2])
   end
 
+  it "reads the OVER state as a final game" do
+    stub_week("2026-11-16", {"gameWeek" => [{"date" => "2026-11-16", "games" => [
+      game_json("gameState" => "OVER", "gameOutcome" => {"lastPeriodType" => "OT"})
+    ]}], "nextStartDate" => "2026-11-23"})
+
+    game = schedule.on("2026-11-16").first
+
+    expect(game).to have_attributes(state: :final, ended_in: :overtime)
+    expect(game.codes).to include(state: "OVER")
+  end
+
   it "keeps the NHL's raw codes" do
     stub_week("2026-11-16", {"gameWeek" => [{"date" => "2026-11-16", "games" => [game_json]}]})
 
