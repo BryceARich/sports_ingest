@@ -226,7 +226,8 @@ seconds at most while live.
 - **Scores and outcomes appear once a game starts.** `homeTeam.score` / `awayTeam.score` are
   absent before then; `gameOutcome.lastPeriodType` (`REG`, `OT`, `SO`) is there once it's final.
   `gameState` runs `FUT`, `PRE`, `LIVE` (`CRIT` late in close games), `FINAL`, then `OFF` when
-  stats are official. The gem reads codes it doesn't know as `:unknown` (`:other` for
+  stats are official. `OVER` also appears for finished games (seen in game 2026020403); the gem
+  reads it as `:final`. The gem reads codes it doesn't know as `:unknown` (`:other` for
   `gameType`) and warns, rather than failing (ADR 0017).
 - **Scores (`/score/{date}`):** each game carries `gameDate`, unlike schedule weeks. `clock`
   (`secondsRemaining`, `running`, `inIntermission`), `period` and `periodDescriptor`

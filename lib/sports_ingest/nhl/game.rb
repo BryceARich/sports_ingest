@@ -57,9 +57,10 @@ module SportsIngest
       # The NHL's +gameType+ numbers.
       GAME_TYPES = {1 => :preseason, 2 => :regular, 3 => :playoffs, 4 => :all_star}.freeze
 
-      # The NHL's +gameState+ codes. +OFF+ is a final game whose stats are official.
+      # The NHL's +gameState+ codes. +OFF+ is a final game whose stats are official; +OVER+ is a
+      # finished game the NHL reports before its stats are official.
       STATES = {"FUT" => :scheduled, "PRE" => :pregame, "LIVE" => :live, "CRIT" => :live,
-                "FINAL" => :final, "OFF" => :final}.freeze
+                "FINAL" => :final, "OVER" => :final, "OFF" => :final}.freeze
 
       # The NHL's +gameScheduleState+ codes.
       SCHEDULE_STATES = {"OK" => :ok, "PPD" => :postponed, "SUSP" => :suspended, "CNCL" => :cancelled,
